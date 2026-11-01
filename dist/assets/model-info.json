@@ -2,8 +2,8 @@
   "name": "Alfa Romeo Giulia",
   "source": "https://www.cadnav.com/3d-models/model-51001.html",
   "license": "Non-commercial use as part of this project; no standalone redistribution.",
-  "parts": 59,
-  "triangles": 1161110,
+  "parts": 132,
+  "triangles": 1161083,
   "dimensions": [
     4.676282,
     1.446448,
@@ -39,5 +39,8 @@
         "maxSpeed": 2.129175554137407
       }
     ]
-  }
+  },
+  "sourceTriangles": 1161110,
+  "sourceMeshGroups": 59,
+  "preparation": "Connected surfaces extracted from existing geometry; matching material primitives combined. Degenerate triangles removed by Draco compression."
 }

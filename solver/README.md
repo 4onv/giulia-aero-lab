@@ -10,3 +10,5 @@ The solver stops on density excursions outside 0.8–1.2 rather than silently cl
 
 Method references: https://palabos.unige.ch/get-started/lattice-boltzmann/what-lattice-boltzmann and https://arxiv.org/abs/1206.0389 . The latter discusses Smagorinsky closure with MRT; this implementation uses BGK, not the paper's MRT collision operator.
 
+
+The shipped UI permits only zero yaw at Re 500 and caps runs at the numerically checked 2,000 steps. The 1 November 2026 report is in ../docs/solver-check.json. This check is numerical, not validation against measured aerodynamic forces.

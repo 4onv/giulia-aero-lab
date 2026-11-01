@@ -2,18 +2,23 @@
 
 A local 3D aerodynamic exploration app built around a detailed **Alfa Romeo Giulia** mesh. It combines an interactive Three.js scene, a numerical potential-flow field, and a Windows desktop shell.
 
-**Status:** working prototype. Ideal-flow visualization is available; the experimental viscous solver and complete parts inspection are still in development.
+A compact desktop workspace for airflow studies and vehicle inspection. All required rendering assets are bundled locally. The numerical methods are exploratory, not validated automotive CFD.
+
+![Giulia Aero Lab workspace](docs/workspace.png)
 
 ## Features
 
-- Detailed vehicle geometry: **1,161,110 triangles** across **59 mesh groups**.
+- Approximately **1.16 million triangles**, organized into **132 selectable surfaces**.
 - Orbit, zoom, camera presets, studio lighting, and revised paint/glass/trim materials.
 - Adjustable air speed and wind angle.
 - Streamlines, surface-pressure coloring, velocity slices, and near-surface probes.
-- Car-only viewing with airflow overlays removed.
-- CSV study export.
+- Vehicle-only workspace with no airflow overlays.
+- Searchable exterior/cabin catalogue, click selection, highlighting, focus and isolation.
+- Cabin cutaway using actual seats, headrests, steering-wheel rim and trim geometry.
+- Reduced-Re viscous experiment with progress, pause/resume, restart and a bounded run.
+- CSV section export and PNG scene capture.
 - Electron desktop window with tray controls, offline assets and fonts, and saved wind settings.
-- Six automated numerical/data checks.
+- Nine automated checks, plus a full 2,000-step numerical solver check.
 
 ## Run locally
 
@@ -57,13 +62,15 @@ The ideal-flow pressure coefficient is calculated as `Cp = 1 − (local speed / 
 
 `solver/lbm.c` implements a D3Q19 lattice Boltzmann solver compiled to WebAssembly, with BGK collision, a static Smagorinsky closure, no-slip vehicle boundaries, slip ground, and a startup ramp. It runs in a worker and uses density-derived pressure.
 
-The wake control remains **disabled pending successful long-run validation**. Its reduced Reynolds number is **500**, not the road-speed Reynolds number. The latest interrupted test reached 620 steps; the full test target is 2,000 steps.
+The enabled experiment uses **Re 500 at zero yaw**, ramps up over 400 steps, and stops at **2,000 steps**. Speed and yaw controls are locked during the run. Calculation runs in a worker and pauses when the window is hidden or Vehicle mode is active. It can take several minutes, depending on hardware.
+
+The complete run passed a numerical stability check on 1 November 2026: density stayed between 0.99744 and 1.00893, and the downstream probe showed a velocity deficit. See [the recorded numerical check](docs/solver-check.json). This does not establish agreement with a real wind tunnel or convergence to steady flow.
 
 ## Accuracy and limitations
 
 This is an exploratory project, **not validated automotive CFD**. The default inviscid method cannot predict viscous drag, boundary layers, separation, or a turbulent wake. Neither mode provides a validated drag/lift coefficient. The car is an existing artist asset, not manufacturer-certified CAD.
 
-Complete interior/engine-bay geometry and individually labelled part inspection are unfinished. Desktop scene initialization is confirmed; final visual and tray-interaction checks remain outstanding.
+The catalogue identifies visible surfaces and some combined assemblies, not every mechanical component. Unmapped meshes are labelled as such. The existing asset has **no complete engine assembly** and no source textures. It cannot provide factory-accurate inspection under the bonnet. See [asset research and model scope](docs/model-scope.md).
 
 ## Tests and solver builds
 
@@ -72,7 +79,7 @@ npm test
 npm run solve
 ```
 
-The standard tests cover field integrity/convergence, fluid interpolation, yaw blending, streamline integrity, physical scale, and viscous pressure sampling. They are numerical checks, not wind-tunnel validation.
+The standard tests cover field integrity/convergence, fluid interpolation, yaw blending, streamline integrity, physical scale, viscous pressure sampling, geometry preservation, and worker pause/completion behavior. They are numerical checks, not wind-tunnel validation.
 
 To rebuild the experimental solver, install **Zig 0.15.2**, then run:
 
@@ -93,15 +100,13 @@ The long viscous test is intentionally separate from the quick test suite. It wr
 | `tools/` | Local server, potential-flow solver and build/package scripts |
 | `tests/` | Numerical and data-integrity checks |
 
-## Roadmap
+## Controls
 
-- [x] Detailed Giulia visualization and ideal-flow exploration
-- [x] Local desktop packaging and offline assets
-- [ ] Finish viscous-solver stability and performance validation
-- [ ] Verify wake visualization and exported results end to end
-- [ ] Complete native visual/tray checks
-- [ ] Add accurately mapped exterior and interior part descriptions
-- [ ] Obtain and integrate accurate engine-bay geometry
+- **Wind tunnel:** choose streamlines, pressure or a velocity section; click the car for a near-surface sample.
+- **Vehicle:** search or click a surface; use Focus, Isolate or Show all. Cabin hides the exterior shell.
+- Drag to orbit, wheel to zoom, right-drag to pan. Camera presets restore an overall view.
+- Space pauses the flow; F focuses a selected component; Escape clears selection.
+- Closing the native window hides it to the tray. The tray menu offers Open, Keep on top and Quit.
 
 ## Credits and asset terms
 

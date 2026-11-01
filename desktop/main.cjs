@@ -29,6 +29,8 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
   win.webContents.session.setPermissionRequestHandler((_contents,_permission,callback)=>callback(false));
   win.on('close',event=>{fs.writeFileSync(settings,JSON.stringify(win.getBounds()));if(!quitting){event.preventDefault();win.hide();}});
   win.once('ready-to-show',()=>win.show());
+  win.on('hide',()=>log('WINDOW HIDDEN: rendering and worker pause on document visibility'));
+  win.on('show',()=>log('WINDOW SHOWN'));
   tray=new Tray(path.join(__dirname,'icon.png'));tray.setToolTip('Giulia Aero Lab • click to reopen');
   tray.setContextMenu(Menu.buildFromTemplate([{label:'Open Giulia Aero Lab',click:()=>{win.show();win.focus();}},{label:'Keep on top',type:'checkbox',click:item=>win.setAlwaysOnTop(item.checked)},{type:'separator'},{label:'Quit',click:()=>app.quit()}]));
   tray.on('click',()=>{win.show();win.focus();});
