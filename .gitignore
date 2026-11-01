@@ -1,0 +1,14 @@
+node_modules/
+desktop-app/
+release/
+.openai/
+*.log
+.env
+.env.*
+!.env.example
+PROGRESS.md
+car-only-preview.png
+solver/validation.json
+dist/assets/wake-preview.bin
+.DS_Store
+Thumbs.db

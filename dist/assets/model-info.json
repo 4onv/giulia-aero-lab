@@ -1,0 +1,43 @@
+{
+  "name": "Alfa Romeo Giulia",
+  "source": "https://www.cadnav.com/3d-models/model-51001.html",
+  "license": "Non-commercial use as part of this project; no standalone redistribution.",
+  "parts": 59,
+  "triangles": 1161110,
+  "dimensions": [
+    4.676282,
+    1.446448,
+    1.971974
+  ],
+  "grid": {
+    "nx": 136,
+    "ny": 48,
+    "nz": 72,
+    "h": 0.1,
+    "origin": [
+      -5.4,
+      0,
+      -3.6
+    ],
+    "occupied": 7044
+  },
+  "method": "Sealed vertical envelope voxelized from the detailed vehicle mesh.",
+  "flow": {
+    "method": "Finite-volume Laplace potential, impermeable voxel boundary and slip ground; two linear basis solutions for yaw.",
+    "quantization": 5000,
+    "basis": [
+      {
+        "axis": "x",
+        "iterations": 411,
+        "residual": 0.000007907549540275838,
+        "maxSpeed": 1.8755705959725746
+      },
+      {
+        "axis": "z",
+        "iterations": 329,
+        "residual": 0.000007996956507327901,
+        "maxSpeed": 2.129175554137407
+      }
+    ]
+  }
+}

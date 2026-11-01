@@ -1,0 +1,17 @@
+* text=auto
+*.js text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.c text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.glb binary
+*.bin binary
+*.wasm binary
+*.hdr binary
+*.woff2 binary
+*.png binary
