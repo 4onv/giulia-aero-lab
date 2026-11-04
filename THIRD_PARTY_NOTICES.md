@@ -23,3 +23,7 @@ DM Sans and Space Grotesk, distributed through Fontsource. Their SIL Open Font L
 ## Desktop runtime
 
 Electron and Chromium are installed as build dependencies. They are not committed as executable binaries. Their notices accompany a locally packaged desktop build.
+
+## Reconstruction references
+
+The procedural engine-bay and cabin-control meshes in `dist/vehicle-details.js` are original project geometry based on the sources listed in [model scope](docs/model-scope.md). Reference photographs and manual illustrations are not included. Dimensions are estimated. Alfa Romeo and related vehicle/emblem names remain their respective owners’ marks; this project has no manufacturer affiliation.

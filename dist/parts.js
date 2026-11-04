@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from './vendor/three.module.js';
 
 // Names refer to connected surfaces in this artist asset, not OEM part numbers.
 // Vehicle left/right is defined while facing forward (-X); left is +Z.
@@ -40,10 +40,10 @@ const body={
 for(const [id,[name,description]] of Object.entries(body))add(id,name,'Exterior',description);
 const cabin=[
  ['Steering wheel rim','Outer grip of the steering wheel. The hub, spokes and steering mechanism are separate from this surface.'],
- ['Dashboard and front cabin trim','Combined dashboard, footwell and trim surface supplied by the artist. Individual controls are not independently modeled here.'],
+ ['Dashboard and front cabin trim','Combined dashboard, footwell and trim surface supplied by the artist. Reference-built controls are separate selectable assemblies.'],
  ['Cabin lining','Combined interior lining and trim around the passenger compartment.'],
  ['Rear seat assembly','Combined rear seating surface supporting rear passengers.'],
- ['Steering hub and column trim','Combined trim surface at the centre of the steering wheel and its column housing. Switches and internal steering components are not individually modeled.'],
+ ['Steering hub and column trim','Combined trim surface at the centre of the steering wheel and its column housing. The start button and shift paddles are separate reference-built components.'],
  ['Left front seat cushion','Lower seat surface supporting the driver in this left-hand-drive asset.'],
  ['Right front seat cushion','Lower seat surface supporting the front passenger.'],
  ['Right front seat backrest','Upright surface supporting the front passenger.'],
@@ -68,6 +68,7 @@ const basic={
  22:['Rear badge','Exterior','Emblem on the rear luggage-compartment panel.']
 };
 export function identifyPart(name,box){
+ if(name==='bonnet-vent-surrounds')return {name:'Bonnet vent surrounds',category:'Exterior',description:'Trim surrounding the bonnet ventilation openings. It moves with the bonnet during inspection.',mapped:true};
  if(named.has(name))return {...named.get(name),mapped:true};
  const id=Number(name.slice(0,3)),side=box.min.z+box.max.z>0?'Left':'Right',end=box.min.x+box.max.x<0?'front':'rear';
  if([2,3,7,8].includes(id))return {name:side+' '+end+' alloy wheel',category:'Wheels & brakes',description:'Wheel rim that supports the tyre and connects to the hub. Wheel rotation is not modeled by the airflow solver.',mapped:true};
@@ -78,44 +79,66 @@ export function identifyPart(name,box){
 }
 
 export class PartsInspector{
- constructor(meshes,originals,camera,controls){
-  this.meshes=meshes;this.originals=originals;this.camera=camera;this.controls=controls;this.view='exterior';this.active=false;this.selected=null;this.isolated=false;
-  this.entries=meshes.map(mesh=>{const box=new THREE.Box3().setFromObject(mesh);return {mesh,box,...identifyPart(mesh.name,box)};}).sort((a,b)=>Number(b.mapped)-Number(a.mapped)||a.name.localeCompare(b.name));
+ constructor(meshes,originals,camera,controls,details,bonnet){
+  this.meshes=meshes;this.originals=originals;this.camera=camera;this.controls=controls;this.details=details;this.bonnet=bonnet;this.view='exterior';this.active=false;this.selected=null;this.isolated=false;this.highlights=[];
+  this.entries=meshes.map(mesh=>{const box=new THREE.Box3().setFromObject(mesh);const info=identifyPart(mesh.name,box);return {mesh,...info,zone:info.category==='Cabin'?'cabin':'exterior'};});
+  this.entries.push(...details.parts.map(mesh=>({mesh,...mesh.userData.part})));
+  this.entries.sort((a,b)=>Number(b.mapped)-Number(a.mapped)||a.name.localeCompare(b.name));
+  this.lookup=new Map();for(const entry of this.entries)entry.mesh.traverse(m=>{if(m.isMesh)this.lookup.set(m,entry);});
   this.$=id=>document.getElementById(id);
   this.$('partSearch').oninput=()=>this.renderList();
-  document.querySelectorAll('[data-vehicle]').forEach(b=>b.onclick=()=>{this.view=b.dataset.vehicle;this.clear();this.visibility();this.renderList();this.camera.position.set(...(this.view==='cabin'?[-2.7,2.6,3.4]:[-5.4,2.65,5.5]));this.controls.target.set(0,this.view==='cabin'?.85:.65,0);this.controls.update();});
+  document.querySelectorAll('[data-vehicle]').forEach(b=>b.onclick=()=>this.setView(b.dataset.vehicle));
+  this.$('openBonnet').onchange=e=>{this.bonnet.setOpen(e.target.checked);if(!e.target.checked&&this.selected?.zone==='engine')this.clear();this.visibility();};
+  this.$('cockpitView').onclick=()=>{this.clear();this.dashboard=true;this.visibility();this.camera.position.set(.68,1.42,.12);this.controls.target.set(-.44,.82,.12);this.controls.update();};
   this.$('closePart').onclick=()=>this.clear();
   this.$('focusPart').onclick=()=>this.focus();
   this.$('isolatePart').onclick=()=>{this.isolated=!this.isolated;this.visibility();};
-  this.$('showAll').onclick=()=>{this.isolated=false;this.view='exterior';this.visibility();this.renderList();this.camera.position.set(-5.4,2.65,5.5);this.controls.target.set(0,.65,0);this.controls.update();};
+  this.$('showAll').onclick=()=>{this.clear();this.home();};
   this.renderList();
  }
- activate(value){this.active=value;if(!value)this.clear();this.visibility();}
+ activate(value){this.clear();this.active=value;this.details.root.visible=value;if(!value)this.bonnet.setOpen(false,true);else{this.bonnet.setOpen(this.view==='engine');this.home();}this.visibility();}
+ setView(view){this.view=view;this.$('partSearch').value='';this.clear();this.bonnet.setOpen(view==='engine');this.visibility();this.renderList();this.home();}
+ home(){
+  this.dashboard=false;this.visibility();
+  const poses={exterior:[[-5.4,2.65,5.5],[0,.65,0]],cabin:[[1.65,2.0,1.8],[-.25,.78,.15]],engine:[[-3.6,3.0,1.8],[-1.25,.95,0]]};
+  const [position,target]=poses[this.view];this.camera.position.set(...position);this.controls.target.set(...target);this.controls.update();
+  document.querySelectorAll('[data-camera]').forEach(b=>b.classList.remove('active'));
+ }
  visibility(){
-  for(const entry of this.entries)entry.mesh.visible=!this.active||(this.isolated?entry===this.selected:this.view==='exterior'||entry.category==='Cabin');
+  for(const entry of this.entries){
+   if(!this.active){entry.mesh.visible=!entry.inspectionOnly;continue;}
+   entry.mesh.visible=this.isolated?entry===this.selected:entry.zone==='engine'?this.view!=='cabin'&&this.bonnet.open:this.view==='cabin'?entry.zone==='cabin':true;
+   if(!this.isolated&&this.view==='cabin'&&this.dashboard&&/^051-0-51~(07|08|09|10)$/.test(entry.mesh.name))entry.mesh.visible=false;
+  }
+  this.$('bonnetControl').hidden=this.view==='cabin';this.$('cockpitView').hidden=this.view!=='cabin';this.$('openBonnet').checked=this.bonnet.open;
   this.$('isolatePart').setAttribute('aria-pressed',String(this.isolated));
   document.querySelectorAll('[data-vehicle]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.vehicle===this.view)));
  }
- clear(){if(this.selected){this.selected.mesh.material=this.originals.get(this.selected.mesh);this.highlight?.dispose();}this.selected=null;this.isolated=false;this.$('partDetail').hidden=true;this.visibility();this.renderList();}
+ clear(){if(this.selected)this.selected.mesh.traverse(m=>{if(m.isMesh)m.material=this.originals.get(m);});this.highlights.forEach(m=>m.dispose());this.highlights=[];this.selected=null;this.isolated=false;this.$('partDetail').hidden=true;this.visibility();this.renderList();}
  select(mesh){
-  const next=this.entries.find(e=>e.mesh===mesh);if(!next)return;
-  this.clear();this.selected=next;
-  if(next.category==='Cabin')this.view='cabin';
+  const next=this.lookup.get(mesh)||this.entries.find(e=>e.mesh===mesh);if(!next)return;
+  const previousView=this.view;this.clear();this.selected=next;
+  if(/^051-0-51~(07|08|09|10)$/.test(next.mesh.name))this.dashboard=false;
+  if(next.zone==='cabin')this.view='cabin';
+  if(next.zone==='exterior'&&this.view==='cabin'){this.view='exterior';this.bonnet.setOpen(false);}
+  if(next.zone==='engine'){this.view='engine';this.bonnet.setOpen(true);}
+  if(previousView!==this.view)this.home();
   this.visibility();
-  this.highlight=this.originals.get(mesh).clone();this.highlight.emissive?.set('#dc7336');this.highlight.emissiveIntensity=.28;mesh.material=this.highlight;
+  next.mesh.traverse(m=>{if(!m.isMesh)return;const highlight=this.originals.get(m).clone();highlight.emissive?.set('#dc7336');highlight.emissiveIntensity=.20;m.material=highlight;this.highlights.push(highlight);});
   this.$('partCategory').textContent=next.category;this.$('partName').textContent=next.name;this.$('partDescription').textContent=next.description;
-  this.$('partEvidence').textContent=(next.mapped?'Identified from source geometry · ':'Unverified identity · ')+mesh.name;
+  this.$('partEvidence').textContent=next.evidence||(next.mapped?'Identified from artist geometry':'Component identity unverified');
+  this.$('partReference').hidden=!next.reference;if(next.reference)this.$('partReference').href=next.reference;
   this.$('partDetail').hidden=false;this.renderList();
  }
  focus(){
-  if(!this.selected)return;const centre=this.selected.box.getCenter(new THREE.Vector3()),size=this.selected.box.getSize(new THREE.Vector3()).length();
+  if(!this.selected)return;this.selected.mesh.updateWorldMatrix(true,true);const box=new THREE.Box3().setFromObject(this.selected.mesh),centre=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3()).length();
   const direction=this.camera.position.clone().sub(this.controls.target).normalize();this.controls.target.copy(centre);this.camera.position.copy(centre).addScaledVector(direction,Math.max(.6,size*1.9));this.controls.update();
   document.querySelectorAll('[data-camera]').forEach(b=>b.classList.remove('active'));
  }
  renderList(){
-  const query=this.$('partSearch').value.toLowerCase().trim(),entries=this.entries.filter(e=>(this.view!=='cabin'||e.category==='Cabin')&&(query?(e.name+' '+e.category).toLowerCase().includes(query):e.mapped));
+  const query=this.$('partSearch').value.toLowerCase().trim(),entries=this.entries.filter(e=>query?(e.name+' '+e.category+' '+(e.service?'service '+e.service:'')).toLowerCase().includes(query):e.zone===this.view&&e.mapped);
   this.$('partCount').textContent=entries.length+(entries.length===1?' component':' components')+(query?' found':'');
   this.$('partList').replaceChildren(...entries.map(entry=>{const b=document.createElement('button');b.textContent=entry.name;b.classList.toggle('selected',entry===this.selected);b.setAttribute('aria-pressed',String(entry===this.selected));b.onclick=()=>{this.select(entry.mesh);this.focus();};return b;}));
-  if(!entries.length)this.$('partCount').textContent='No matching component in this asset';
+  if(!entries.length)this.$('partCount').textContent='No matching component. Try another name.';
  }
 }

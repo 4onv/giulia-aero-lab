@@ -8,17 +8,22 @@ A compact desktop workspace for airflow studies and vehicle inspection. All requ
 
 ## Features
 
-- Approximately **1.16 million triangles**, organized into **132 selectable surfaces**.
+- Approximately **1.16 million triangles**, organized into **133 selectable surfaces** after separating the bonnet vent trim.
 - Orbit, zoom, camera presets, studio lighting, and revised paint/glass/trim materials.
 - Adjustable air speed and wind angle.
 - Streamlines, surface-pressure coloring, velocity slices, and near-surface probes.
 - Vehicle-only workspace with no airflow overlays.
-- Searchable exterior/cabin catalogue, click selection, highlighting, focus and isolation.
-- Cabin cutaway using actual seats, headrests, steering-wheel rim and trim geometry.
+- Searchable exterior, cabin and engine-bay catalogue, click selection, highlighting, focus and isolation.
+- Cabin cutaway using the artist’s seats, headrests, steering-wheel rim and trim geometry.
+- Animated bonnet, **21 reconstructed engine-bay assemblies**, and six individually selectable service points.
+- **10 reconstructed cabin control assemblies**, including instruments, infotainment, climate controls, selector and paddles; close dashboard camera.
+- Reference links and explicit provenance for the added assemblies.
 - Reduced-Re viscous experiment with progress, pause/resume, restart and a bounded run.
 - CSV section export and PNG scene capture.
 - Electron desktop window with tray controls, offline assets and fonts, and saved wind settings.
-- Nine automated checks, plus a full 2,000-step numerical solver check.
+- Twelve automated checks, plus a full 2,000-step numerical solver check.
+
+![Reference-built engine bay with opening bonnet](docs/engine-bay.png)
 
 ## Run locally
 
@@ -70,7 +75,7 @@ The complete run passed a numerical stability check on 1 November 2026: density 
 
 This is an exploratory project, **not validated automotive CFD**. The default inviscid method cannot predict viscous drag, boundary layers, separation, or a turbulent wake. Neither mode provides a validated drag/lift coefficient. The car is an existing artist asset, not manufacturer-certified CAD.
 
-The catalogue identifies visible surfaces and some combined assemblies, not every mechanical component. Unmapped meshes are labelled as such. The existing asset has **no complete engine assembly** and no source textures. It cannot provide factory-accurate inspection under the bonnet. See [asset research and model scope](docs/model-scope.md).
+The catalogue identifies visible surfaces and some combined assemblies, not every mechanical component. Unmapped meshes are labelled as such. The artist asset has no complete engine assembly or source textures. Version 0.5 adds an original visible-bay reconstruction based on the 2017 Quadrifoglio service layout and photographs, plus manual-referenced cabin controls. These have estimated dimensions and do **not** constitute OEM CAD, internal engine geometry or a complete mechanical teardown. The bonnet closes automatically before airflow resumes; inspection details do not change the solved aerodynamic envelope. See [asset research and model scope](docs/model-scope.md).
 
 ## Tests and solver builds
 
@@ -79,7 +84,7 @@ npm test
 npm run solve
 ```
 
-The standard tests cover field integrity/convergence, fluid interpolation, yaw blending, streamline integrity, physical scale, viscous pressure sampling, geometry preservation, and worker pause/completion behavior. They are numerical checks, not wind-tunnel validation.
+The standard tests cover field integrity/convergence, fluid interpolation, yaw blending, streamline integrity, physical scale, viscous pressure sampling, geometry preservation, engine-bay service-point orientation, bonnet motion, inspection visibility/selection, and worker pause/completion behavior. They are numerical checks, not wind-tunnel validation.
 
 To rebuild the experimental solver, install **Zig 0.15.2**, then run:
 
@@ -103,7 +108,7 @@ The long viscous test is intentionally separate from the quick test suite. It wr
 ## Controls
 
 - **Wind tunnel:** choose streamlines, pressure or a velocity section; click the car for a near-surface sample.
-- **Vehicle:** search or click a surface; use Focus, Isolate or Show all. Cabin hides the exterior shell.
+- **Vehicle:** search or click a surface; use Focus, Isolate or Show all. Cabin hides the exterior shell; Dashboard cutaway removes the front seat backs and moves inside. Engine opens the bonnet. Search covers all three areas; Reset returns to the current area’s overview.
 - Drag to orbit, wheel to zoom, right-drag to pan. Camera presets restore an overall view.
 - Space pauses the flow; F focuses a selected component; Escape clears selection.
 - Closing the native window hides it to the tray. The tray menu offers Open, Keep on top and Quit.

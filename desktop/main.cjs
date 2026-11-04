@@ -8,7 +8,7 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
  app.on('before-quit',()=>quitting=true);
  app.whenReady().then(()=>{
   const root=path.resolve(__dirname,'../dist');
-  const log=(text)=>fs.appendFileSync(path.join(__dirname,'../session.log'),new Date().toISOString()+' '+text+'\n');
+  const log=(text)=>{try{fs.appendFileSync(path.join(app.getPath('userData'),'session.log'),new Date().toISOString()+' '+text+'\n');}catch{}};
   log('desktop starting');
   protocol.handle('giulia',request=>{
    let file;try{const url=new URL(request.url);if(url.host!=='app')return new Response('Not found',{status:404});file=path.resolve(root,'.'+decodeURIComponent(url.pathname));if(file===root)file=path.join(root,'index.html');}catch{return new Response('Invalid path',{status:400});}
@@ -24,7 +24,8 @@ if(!app.requestSingleInstanceLock()){app.quit();}else{
   win.webContents.on('did-fail-load',(_event,code,description)=>log('load failure '+code+' '+description));
   win.webContents.on('console-message',(event,level,message)=>{const text=event.message||message;if(text)log('renderer '+text);});
   ipcMain.on('scene-ready',event=>{if(event.sender===win.webContents)log('SCENE READY: vehicle, flow field and rendering initialized');});
-  win.webContents.setWindowOpenHandler(({url})=>{if(/^https:\/\/(www\.)?(cadnav\.com|polyhaven\.com|docs\.polyhaven\.com)\//.test(url))shell.openExternal(url);return{action:'deny'};});
+  const sourceHosts=new Set(['www.cadnav.com','cadnav.com','polyhaven.com','docs.polyhaven.com','aftersales.fiat.com','vehicleinfo.mopar.com','www.motortrend.com']);
+  win.webContents.setWindowOpenHandler(({url})=>{try{const parsed=new URL(url);if(parsed.protocol==='https:'&&sourceHosts.has(parsed.hostname))shell.openExternal(url);}catch{}return{action:'deny'};});
   win.webContents.on('will-navigate',(event,url)=>{if(!url.startsWith('giulia://app/'))event.preventDefault();});
   win.webContents.session.setPermissionRequestHandler((_contents,_permission,callback)=>callback(false));
   win.on('close',event=>{fs.writeFileSync(settings,JSON.stringify(win.getBounds()));if(!quitting){event.preventDefault();win.hide();}});
