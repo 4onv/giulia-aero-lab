@@ -2,10 +2,26 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {FlowField} from '../dist/field.js';
+import {tunnelReading} from '../dist/run-comparison.js';
 const asset=new URL('../dist/assets/',import.meta.url);
 const info=JSON.parse(fs.readFileSync(new URL('model-info.json',asset)));
 const load=(name,Type)=>{const b=fs.readFileSync(new URL(name,asset));return new Type(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength))};
 const field=new FlowField(info,load('solid.bin',Uint8Array),load('flow-x.bin',Int16Array),load('flow-z.bin',Int16Array));
+test('Run measurements keep the two probes in air at every yaw and use the active solver units',()=>{
+ for (const yaw of [-20,-10,0,10,20]) {
+  field.setYaw(yaw);
+  const reference=tunnelReading(field,60);
+  const live=tunnelReading(field,120);
+  assert.equal(live.yaw,yaw);
+  assert.equal(live.pressure,4*reference.pressure);
+  for (const probe of ['roof','tail']) {
+   assert.ok(reference[probe]>0 && Number.isFinite(reference[probe]));
+   assert.equal(live[probe],2*reference[probe]);
+  }
+ }
+ assert.equal(tunnelReading({experimental:true},120),null);
+ field.setYaw(0);
+});
 test('Complete data and converged basis fields',()=>{
  assert.equal(field.solid.reduce((a,b)=>a+b,0),info.grid.occupied);
  for(const basis of info.flow.basis)assert.ok(basis.residual<8e-6);

@@ -14,3 +14,31 @@ dialog{width:620px;max-width:90vw;max-height:85vh;background:#292e32;border:1px 
 #cockpitView{margin-bottom:16px;font-size:11px;text-align:left}
 
 .vehicle-mode #status{display:none}
+
+/* A run sheet reads from left to right, like a test engineer's log. */
+.run-sheet h2 { margin-bottom: 9px; }
+.run-buttons { display: flex; gap: 6px; }
+.run-buttons button { padding: 6px 9px; font-size: 11px; }
+.run-sheet p { margin: 9px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.run-sheet table { width: 100%; margin-top: 14px; border-collapse: collapse; font-size: 11px; font-variant-numeric: tabular-nums; }
+.run-sheet th, .run-sheet td { padding: 6px 2px; text-align: right; border-bottom: 1px solid var(--line); }
+.run-sheet th:first-child { text-align: left; font-weight: 400; }
+.run-sheet th small { display: block; font-size: 9px; }
+.run-sheet thead th { color: #b3bdbf; font-weight: 400; }
+.run-sheet tbody td:last-child { color: #efd2a8; }
+@media (max-width: 720px) { .run-sheet { grid-column: 1 / -1; } }
+
+/* Exhibition occupies the entire client area, including small desktop windows. */
+body.exhibiting { overflow: hidden; }
+.exhibiting :is(header, aside, footer, .stage-top, .camera-toolbar, .stage-bottom, .metrics, #legend, #probe, #partDetail) { display: none; }
+.exhibiting main, .exhibiting .stage-column, .exhibiting .stage { display: block; width: 100%; height: 100dvh; min-height: 0; }
+#exhibit-rail { position: absolute; z-index: 2; inset: auto 0 0; pointer-events: none; padding: 52px clamp(18px, 4vw, 58px) clamp(20px, 4vw, 38px); display: flex; align-items: end; justify-content: space-between; gap: 14px; background: linear-gradient(transparent, #0b1015cc); }
+.exhibit-plate { padding-left: 15px; border-left: 3px solid #ae3341; color: #efe8db; }
+.exhibit-plate > span { display: block; text-transform: uppercase; letter-spacing: .22em; font-size: 10px; }
+.exhibit-plate strong { display: block; margin: 3px 0 7px; font: 400 clamp(26px, 4vw, 48px)/1.05 Georgia, serif; }
+.exhibit-plate strong i { font-weight: 400; }
+.exhibit-plate small { color: #b6c0c3; font: 11px/1.3 Consolas, monospace; }
+.exhibit-actions { pointer-events: auto; display: flex; gap: 6px; }
+.exhibit-actions button { font-size: 11px; background: #172025dc; color: #e5ded3; border-color: #6c737380; }
+.exhibit-actions button[aria-pressed="true"] { color: #fff0ce; border-color: #d1af83; }
+@media (max-width: 560px) { #exhibit-rail { align-items: flex-start; flex-direction: column; } }

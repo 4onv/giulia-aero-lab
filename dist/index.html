@@ -1,11 +1,18 @@
 <!doctype html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#202326"><title>Giulia Aero Lab</title><link rel="stylesheet" href="./style.css"><script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script></head><body>
-<header><div class="identity"><span class="brand-mark"></span><strong>Giulia</strong><span>Aero Lab</span></div><nav aria-label="Workspace"><button data-workspace="tunnel" class="selected">Wind tunnel</button><button data-workspace="vehicle" disabled>Vehicle</button></nav><div class="header-actions"><button id="hideApp" hidden>Hide to tray</button><button id="aboutButton">Method & sources</button></div></header>
+<header><div class="identity"><span class="brand-mark"></span><strong>Giulia</strong><span>Aero Lab</span></div><nav aria-label="Workspace"><button data-workspace="tunnel" class="selected">Wind tunnel</button><button data-workspace="vehicle" disabled>Vehicle</button></nav><div class="header-actions"><button id="enter-exhibition" title="Hide controls (H)" disabled>Exhibit</button><button id="hideApp" hidden>Hide to tray</button><button id="aboutButton">Method & sources</button></div></header>
 <main><aside>
 <div class="vehicle-heading"><h1>Alfa Romeo Giulia</h1><p>Quadrifoglio body · artist mesh</p></div>
 <div id="tunnelPanel">
 <section><h2>Display</h2><div class="mode-grid" role="group" aria-label="Flow visualization"><button data-mode="flow" class="selected">Streamlines</button><button data-mode="pressure">Surface pressure</button><button data-mode="slice">Velocity section</button></div></section>
 <section><h2>Conditions</h2><label class="slider-label" for="speed">Air speed <output id="speedOut">120 <small>km/h</small></output></label><input id="speed" type="range" min="20" max="250" step="5" value="120"><div class="range-ticks"><span>20</span><span>250 km/h</span></div><label class="slider-label" for="yaw">Yaw angle <output id="yawOut">0 <small>°</small></output></label><input id="yaw" type="range" min="-20" max="20" step="1" value="0"><div class="range-ticks"><span>−20°</span><span>+20°</span></div></section>
+<section class="run-sheet" id="run-sheet">
+<h2>Run comparison</h2>
+<div class="run-buttons"><button data-pin disabled>Pin this run</button><button data-clear hidden>Clear</button></div>
+<table hidden aria-label="Reference run compared with current run">
+<thead><tr><th scope="col">Reading</th><th scope="col">Ref.</th><th scope="col">Live</th><th scope="col">Δ</th></tr></thead><tbody></tbody>
+</table><p>Pin the current wind settings, then change speed or yaw to compare both runs.</p>
+</section>
 <section class="solver-choice"><h2>Flow method</h2><div class="segmented"><button data-solver="ideal" aria-pressed="true">Potential</button><button data-solver="wake" aria-pressed="false">Viscous study</button></div><p id="solverNote" role="status">Steady, inviscid flow. No separation or drag prediction.</p><progress id="solverProgress" max="2000" value="0" hidden aria-label="Viscous solver progress"></progress><button id="restartWake" hidden>Restart calculation</button></section>
 <section id="sliceControl" hidden><label class="slider-label" for="slice">Section offset <output id="sliceOut">0.0 m</output></label><input id="slice" type="range" min="-1.8" max="1.8" step=".1" value="0"></section>
 <section class="method-note"><p>100 mm computational grid.<br>Exploratory flow, not validated vehicle CFD.</p><button id="methodButton">Calculation details</button></section>
@@ -13,6 +20,10 @@
 <div id="vehiclePanel" hidden><div class="segmented vehicle-views" role="group" aria-label="Vehicle visibility"><button data-vehicle="exterior" aria-pressed="true">Exterior</button><button data-vehicle="cabin" aria-pressed="false">Cabin</button><button data-vehicle="engine" aria-pressed="false">Engine</button></div><button id="cockpitView" hidden>Dashboard cutaway</button><label id="bonnetControl" class="switch-row" for="openBonnet"><span>Open bonnet</span><input id="openBonnet" type="checkbox"></label><label class="search-label" for="partSearch">Find a component</label><input type="search" id="partSearch" placeholder="Search all components…" autocomplete="off"><div id="partCount"></div><div id="partList" role="list" aria-label="Vehicle components"></div><p class="asset-note">Engine bay and controls reconstructed from references. Select a part to see its source.</p></div>
 <div class="sidebar-foot"><label class="switch-row" for="wireframe"><span>Mesh edges</span><input type="checkbox" id="wireframe"></label><span id="geometryInfo">Loading geometry…</span></div></aside>
 <section class="stage-column"><div class="stage" id="stage">
+<div id="exhibit-rail" hidden>
+  <div class="exhibit-plate"><span>Alfa Romeo</span><strong>Giulia <i>Quadrifoglio</i></strong><small id="exhibit-reading"></small></div>
+  <div class="exhibit-actions"><button id="exhibit-orbit" aria-pressed="false">Turntable</button><button id="exit-exhibition" title="Return to the workspace (Esc)">Show controls</button></div>
+</div>
 <div id="viewport" aria-label="Interactive 3D Alfa Romeo Giulia"></div>
 <div class="stage-top"><div><h2 id="viewTitle">Streamlines</h2><p id="viewDescription">Velocity field around the sealed vehicle body.</p></div><span id="status" role="status">Loading</span></div>
 <div id="loading"><div class="loading-inner"><div class="loader-ring"></div><strong id="loadingTitle">Loading Giulia</strong><span id="loadingDetail">Vehicle geometry and local flow field</span><button id="retry" hidden>Retry</button></div></div>

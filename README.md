@@ -21,7 +21,8 @@ A compact desktop workspace for airflow studies and vehicle inspection. All requ
 - Reduced-Re viscous experiment with progress, pause/resume, restart and a bounded run.
 - CSV section export and PNG scene capture.
 - Electron desktop window with tray controls, offline assets and fonts, and saved wind settings.
-- Twelve automated checks, plus a full 2,000-step numerical solver check.
+- Exhibition view with a manual turntable, plus a pinned reference run for speed, yaw, inlet pressure and two local airflow readings.
+- Thirteen automated checks, plus a full 2,000-step numerical solver check.
 
 ![Reference-built engine bay with opening bonnet](docs/engine-bay.png)
 
@@ -107,6 +108,8 @@ The long viscous test is intentionally separate from the quick test suite. It wr
 
 ## Controls
 
+- **Exhibit:** press H or choose Exhibit to fill the window with the current study. Turntable slowly rotates the view. Drag to take the camera back, then use Show controls or Escape to return.
+- **Run comparison:** under Wind tunnel, pin a potential-flow run and change speed or yaw. The sheet keeps reference, live and difference readings for inlet speed, yaw, dynamic pressure and two fixed virtual anemometers. The reference lasts for the session, including visits to the viscous study.
 - **Wind tunnel:** choose streamlines, pressure or a velocity section; click the car for a near-surface sample.
 - **Vehicle:** search or click a surface; use Focus, Isolate or Show all. Cabin hides the exterior shell; Dashboard cutaway removes the front seat backs and moves inside. Engine opens the bonnet. Search covers all three areas; Reset returns to the current area’s overview.
 - Drag to orbit, wheel to zoom, right-drag to pan. Camera presets restore an overall view.
