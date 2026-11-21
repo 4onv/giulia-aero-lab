@@ -42,6 +42,8 @@ Open **http://127.0.0.1:8766**. This serves the bundled app only on your compute
 
 The lab can open straight to a view using the URL query `?view=cockpit`, `?view=exterior`, `?view=engine`, `?view=pressure` or `?view=flow`. In the driver’s seat, choose **Show vehicle information** to change the Connect screen and **Show navigation map** to return.
 
+Press the red start button on the steering wheel, or choose **Start engine** in the sidebar, to hear the synthesized V6 start and settle into idle. The tachometer follows the sound. **Blip throttle** raises the revs and **Stop engine** switches it off. Leaving the driver’s seat or hiding the page also stops playback.
+
 ### Desktop app
 
 ```sh

@@ -44,12 +44,25 @@ export function instrumentDial(tach) {
     }
     text(c,tach?'RPM × 1000':'km/h',0,102,'18px Arial','#b4babd');
     text(c,tach?'GIRI':'VELOCITÀ',0,129,'12px Arial','#939da0');
-    const needle = arc(tach ? .10 : 0);
-    c.save(); c.rotate(needle); c.fillStyle='#e95340';
+    if (tach) return;
+    c.save(); c.rotate(arc(0)); c.fillStyle='#e95340';
     c.beginPath(); c.moveTo(-35,-5); c.lineTo(202,-1); c.lineTo(202,1); c.lineTo(-35,5); c.fill(); c.restore();
     const hub=c.createLinearGradient(0,-19,0,19);hub.addColorStop(0,'#7e8484');hub.addColorStop(.3,'#242929');hub.addColorStop(1,'#0d1011');
     c.fillStyle=hub; c.beginPath(); c.arc(0,0,17,0,Math.PI*2); c.fill();
   },true);
+}
+
+export function tachNeedle() {
+  const needle=artwork(512,512,c=>{
+    c.translate(256,256);
+    c.fillStyle='#e95340';c.beginPath();c.moveTo(-34,-5);
+    c.lineTo(205,-1);c.lineTo(205,1);c.lineTo(-34,5);c.fill();
+    const hub=c.createRadialGradient(-4,-5,1,0,0,18);
+    hub.addColorStop(0,'#6e7372');hub.addColorStop(.55,'#343637');hub.addColorStop(1,'#131617');
+    c.fillStyle=hub;c.beginPath();c.arc(0,0,17,0,2*Math.PI);c.fill();
+  },true);
+  needle.map.center.set(.5,.5);
+  return needle;
 }
 
 export function clusterDisplay() {

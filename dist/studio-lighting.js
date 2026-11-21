@@ -113,6 +113,10 @@ export function setupStudio(THREE, scene, renderer) {
 
   function update() {
     cabinFill.visible = windowLight.visible = inspecting && interior;
+    // The seated driver's lights and bodywork stay fixed while the tach moves.
+    // Reuse this shadow map for ignition and throttle animation.
+    renderer.shadowMap.autoUpdate = !(inspecting && interior);
+    renderer.shadowMap.needsUpdate = true;
     const photographic = Boolean(inspecting && dome);
     room.visible = photographic;
     rig.forEach(item => { item.visible = !photographic; });

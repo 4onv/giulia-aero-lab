@@ -83,7 +83,13 @@ export class PartsInspector{
  constructor(meshes,originals,camera,controls,details,bonnet,onInterior=()=>{}){
   this.onInterior=onInterior;
   this.meshes=meshes;this.originals=originals;this.camera=camera;this.controls=controls;this.details=details;this.bonnet=bonnet;this.view='exterior';this.active=false;this.selected=null;this.isolated=false;this.highlights=[];
-  this.entries=meshes.map(mesh=>{const box=new THREE.Box3().setFromObject(mesh);const info=identifyPart(mesh.name,box);return {mesh,...info,zone:info.category==='Cabin'?'cabin':'exterior'};});
+  this.behindBody=[];
+  this.visualRevision=0;
+  this.entries=meshes.map(mesh=>{
+    const box=new THREE.Box3().setFromObject(mesh),info=identifyPart(mesh.name,box);
+    if(info.category!=='Cabin'&&(box.max.y<.70||box.max.x< -1.93||box.min.x>1.90||info.category==='Wheels & brakes'))this.behindBody.push(mesh);
+    return {mesh,...info,zone:info.category==='Cabin'?'cabin':'exterior'};
+  });
   this.entries.push(...details.parts.map(mesh=>({mesh,...mesh.userData.part})));
   const pad=details.parts.find(mesh=>mesh.name==='bonnet-insulation');
   if(pad)bonnet.pivot.attach(pad);
@@ -107,6 +113,16 @@ export class PartsInspector{
  }
  activate(value){this.clear();this.active=value;this.details.root.visible=value;if(!value)this.bonnet.setOpen(false,true);else{this.bonnet.setOpen(this.view==='engine');this.home();}this.visibility();}
  setView(view){this.view=view;this.$('partSearch').value='';this.clear();this.bonnet.setOpen(view==='engine');this.visibility();this.renderList();this.home();}
+ leaveDriverSeat(){if(this.dashboard){this.dashboard=false;this.visibility();}}
+ updateDriverGeometry(){
+  // Wheels, brakes, and the lower bumpers are hidden by the body when viewed
+  // from the front seat. Restore them immediately if the camera orbits out.
+  const p=this.camera.position;
+  const inside=Boolean(this.dashboard&&this.active&&!this.isolated&&this.view==='cabin'&&p.x>.12&&p.x<1&&p.y>1.02&&p.y<1.34&&p.z>.03&&p.z<.57);
+  if(this.insideBody===inside)return;
+  this.insideBody=inside;
+  for(const mesh of this.behindBody){if(inside)mesh.layers.disable(0);else mesh.layers.enable(0);}
+ }
  home(){
   this.dashboard=false;this.visibility();
   const poses={exterior:[[-5.4,2.65,5.5],[0,.65,0]],cabin:[[1.65,2.0,1.8],[-.25,.78,.15]],engine:[[-3.6,3.0,1.8],[-1.25,.95,0]]};
@@ -114,7 +130,9 @@ export class PartsInspector{
   document.querySelectorAll('[data-camera]').forEach(b=>b.classList.remove('active'));
  }
  visibility(){
-  this.onInterior(Boolean(this.active && this.view==='cabin' && this.dashboard));
+  this.visualRevision++;
+  this.updateDriverGeometry();
+  this.onInterior(Boolean(this.active && this.view==='cabin' && this.dashboard && !this.isolated));
   for(const entry of this.entries){
    if(!this.active){entry.mesh.visible=!entry.inspectionOnly;continue;}
    entry.mesh.visible=this.isolated?entry===this.selected:entry.zone==='engine'?this.view!=='cabin'&&this.bonnet.open:this.view==='cabin'?entry.zone==='cabin':true;
@@ -147,7 +165,7 @@ export class PartsInspector{
   this.$('partDetail').hidden=false;this.renderList();
  }
  focus(){
-  if(!this.selected)return;this.selected.mesh.updateWorldMatrix(true,true);const box=new THREE.Box3().setFromObject(this.selected.mesh),centre=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3()).length();
+  if(!this.selected)return;this.leaveDriverSeat();this.selected.mesh.updateWorldMatrix(true,true);const box=new THREE.Box3().setFromObject(this.selected.mesh),centre=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3()).length();
   const direction=this.camera.position.clone().sub(this.controls.target).normalize();this.controls.target.copy(centre);this.camera.position.copy(centre).addScaledVector(direction,Math.max(.6,size*1.9));this.controls.update();
   document.querySelectorAll('[data-camera]').forEach(b=>b.classList.remove('active'));
  }

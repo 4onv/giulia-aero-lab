@@ -12,6 +12,12 @@ dialog{width:620px;max-width:90vw;max-height:85vh;background:#292e32;border:1px 
 @media(max-width:720px){body{overflow:auto}header{padding:0 10px;gap:8px}.identity>span:last-child{display:none}nav button{padding:0 9px}.header-actions #hideApp{display:none}main{height:auto;display:flex;flex-direction:column}.stage-column{order:-1;height:70dvh;min-height:510px}aside{min-height:400px}.vehicle-heading{padding:12px 18px}#tunnelPanel{display:grid;grid-template-columns:1fr 1fr}#vehiclePanel{height:420px}.stage-top{left:15px;right:15px}.stage-top p{max-width:230px}#status{max-width:120px;font-size:9px}.metrics article{padding:9px}.metrics strong{font-size:14px}.metrics article>span{font-size:9px}.stage-bottom{left:15px}.camera-toolbar{right:15px}.scale-legend{bottom:99px;left:15px}.header-actions button{padding:5px}footer>span{display:none}footer button:first-of-type{margin-left:auto}}
 
 #cockpitView{margin-bottom:16px;font-size:11px;text-align:left}
+#cockpitIgnition{margin:12px 0 16px;border-top:1px solid var(--line);padding-top:12px}
+#cockpitIgnition .ignition-actions,#cockpitIgnition .ignition-reading{display:flex;align-items:center;gap:8px}
+#cockpitIgnition .ignition-reading{justify-content:space-between;font-size:11px;color:var(--muted);margin:8px 0 0}
+#cockpitRPM{font-variant-numeric:tabular-nums}
+#ignitionToggle{border-color:#a45250}
+#revEngine:disabled{opacity:.45}
 
 .vehicle-mode #status{display:none}
 

@@ -1,4 +1,4 @@
-import { instrumentDial, clusterDisplay, navigationScreen, steeringBadge, vehicleScreen, wheelSwitches } from './cockpit-art.js';
+import { instrumentDial, clusterDisplay, navigationScreen, steeringBadge, tachNeedle, vehicleScreen, wheelSwitches } from './cockpit-art.js';
 import { bayLips, hoodInsulation, innerWing, paddedFace, rimPoint, steeringGrip } from './body-reconstruction.js';
 import { cabinMaterial } from './cabin-finishes.js';
 import * as THREE from './vendor/three.module.js';
@@ -168,6 +168,13 @@ export function createVehicleDetails(sourceMeshes=[]){
  // They are separate educational assemblies, not a working vehicle interface.
  function control(id,name,description){return part(id,name,description,{zone:'cabin',reference:CABIN_REFERENCE});}
  const instruments=control('instrument-cluster','Instrument cluster','Twin analogue tachometer and speedometer flank the driver information display. Warning lamps and the centre display communicate vehicle status. The displayed markings are illustrative.');
+ let needle, needleRPM=-100, visualRevision=0;
+ function setRPM(rpm){
+   if(!needle||(rpm!==0&&Math.abs(needleRPM-rpm)<25))return;
+   needleRPM=rpm;
+   needle.map.rotation=-(.75+1.5*THREE.MathUtils.clamp(rpm/8000,0,1))*Math.PI;
+   visualRevision++;
+ }
  for(const z of [.275,.48]){
   const housing=cylinder(instruments,.098,.075,[-.52,.96,z],m.black);housing.rotation.z=Math.PI/2;
   const face=cylinder(instruments,.084,.005,[-.479,.96,z],m.black);face.rotation.z=Math.PI/2;
@@ -182,6 +189,12 @@ export function createVehicleDetails(sourceMeshes=[]){
   if(typeof document!=='undefined'){
    const dial = mesh(instruments,new THREE.PlaneGeometry(.165,.165),instrumentDial(z>.4),[-.472,.96,z]);
    dial.rotation.y=Math.PI/2;
+   if(z>.4){
+     needle=tachNeedle();
+     const overlay=mesh(instruments,new THREE.PlaneGeometry(.165,.165),needle,[-.4714,.96,z]);
+     overlay.rotation.y=Math.PI/2;
+     setRPM(0);
+   }
   }
  }
  box(instruments,[.020,.092,.067],[-.5,.959,.377],m.black,.006);
@@ -208,6 +221,7 @@ export function createVehicleDetails(sourceMeshes=[]){
    changeScreen=vehicle=>{
      if(vehicle&&!vehicleMap)vehicleMap=vehicleScreen().map;
      screen.map=vehicle?vehicleMap:map;
+     visualRevision++;
    };
  }
  const vents=control('centre-vents','Centre dashboard air outlets','Two adjustable outlets distribute air from the heating and air-conditioning system into the cabin.');
@@ -267,7 +281,7 @@ export function createVehicleDetails(sourceMeshes=[]){
  cylinder(controller,.042,.025,[.09,.533,0],m.steel);cylinder(controller,.038,.026,[.09,.54,0],m.cover);for(const z of [-.07,.07])box(controller,[.055,.013,.022],[.09,.536,z],m.black,.005);
  const parking=control('parking-brake','Electric parking-brake switch','Console switch for the electric parking brake. It is a separate control from the automatic transmission’s Park position.');
  box(parking,[.042,.022,.029],[.19,.531,.07],m.black,.004);label(parking,[.19,.544,.07],.023,.018,'(P)',{size:44});
- const start=control('engine-start','Steering-wheel start button','Engine start/stop button positioned on the steering wheel. The red button is a distinctive Quadrifoglio control.');
+ const start=control('engine-start','Steering-wheel start button','The red Quadrifoglio ignition switch sits on the lower left of the steering wheel. In the driver’s seat, press it to start or stop the simulated V6.');
  // A moulded lower spoke carries the start button. Its rounded pad shares
  // the rear surface of the horn at one end and the rim at the other.
  const wheelCenter=[-.242,.906,.377], tilt=.307;
@@ -314,10 +328,17 @@ export function createVehicleDetails(sourceMeshes=[]){
  // A separate moulded lobe carries the Quadrifoglio ignition switch.
  const podOutline=[[-.034,.031],[.011,.025],[.035,.008],[.034,-.021],[.017,-.035],[-.006,-.033],[-.025,-.009]];
  wheelPiece(paddedFace(podOutline,.022),pod,.007,-.033,.081);
- const startBezel=cylinder(start,.0185,.009,[-.211,.849,.470],metalSpoke);startBezel.rotation.z=Math.PI/2;
- const startCap=cylinder(start,.016,.009,[-.204,.849,.470],material('#a91b27',.32,.26));startCap.rotation.z=Math.PI/2;
- label(start,[-.198,.852,.470],.021,.007,'START',{vertical:true,size:45});
- label(start,[-.198,.844,.470],.021,.006,'STOP',{vertical:true,size:43});
+ const startBezel=cylinder(start,.0185,.009,[-.211,.849,.470],metalSpoke.clone());startBezel.rotation.z=Math.PI/2;
+ const redSwitch=material('#a91b27',.32,.26);
+ const startCap=cylinder(start,.016,.009,[-.204,.849,.470],redSwitch);startCap.rotation.z=Math.PI/2;
+ const switchLabels=[label(start,[-.198,.852,.470],.021,.007,'START',{vertical:true,size:45}),
+   label(start,[-.198,.844,.470],.021,.006,'STOP',{vertical:true,size:43})];
+ // These finishes stay distinct when geometry is batched. The surrounding
+ // wheel, spokes and horn pad continue to open their component inspector.
+ for(const surface of [startBezel,startCap,...switchLabels]){
+   if(surface)surface.material.userData.ignitionSwitch=true;
+ }
+ function setIgnition(phase){redSwitch.emissive.setHex(phase==='off'?0x000000:0x671419);visualRevision++;}
  const paddles=control('shift-paddles','Steering-column shift paddles','Column-mounted aluminium paddles command manual gear changes on the automatic transmission. Left requests a downshift; right requests an upshift.');
  const brushed=new THREE.MeshPhysicalMaterial({color:'#9a9fa1',metalness:.79,roughness:.39,clearcoat:.18,clearcoatRoughness:.28});
  for(const side of [-1,1]){
@@ -399,7 +420,7 @@ export function createVehicleDetails(sourceMeshes=[]){
   for(const [mat,geometries] of batches){const combined=new THREE.BufferGeometry();for(const attr of ['position','normal','uv']){const arrays=geometries.map(g=>g.getAttribute(attr));if(arrays.some(a=>!a))continue;const data=new Float32Array(arrays.reduce((n,a)=>n+a.array.length,0));let offset=0;for(const a of arrays){data.set(a.array,offset);offset+=a.array.length;}combined.setAttribute(attr,new THREE.BufferAttribute(data,arrays[0].itemSize));}mesh(group,combined,mat);geometries.forEach(g=>g.dispose());}
  }
  root.visible=false;
- return {root,parts,meshes,changeScreen};
+ return {root,parts,meshes,changeScreen,setRPM,setIgnition,get visualRevision(){return visualRevision;}};
 }
 
 export class BonnetMotion{
