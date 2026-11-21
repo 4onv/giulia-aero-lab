@@ -43,7 +43,7 @@ function setup(){
  for(const z of [-1.6,1.6]){const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-8,.002,z),new THREE.Vector3(10,.002,z)]);scene.add(new THREE.Line(g,laneMaterial))}
  studioLighting=setupStudio(THREE,scene,renderer);
  probeMarker=new THREE.Mesh(new THREE.SphereGeometry(.035,16,10),new THREE.MeshBasicMaterial({color:0xf1e8b7}));probeMarker.visible=false;scene.add(probeMarker);
- new ResizeObserver(()=>{const w=container.clientWidth,h=container.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}).observe(container);
+ new ResizeObserver(()=>{const w=container.clientWidth,h=container.clientHeight;if(!w||!h)return;renderer.setSize(w,h);camera.aspect=w/h;if(inspector)inspector.frameViewport();else camera.updateProjectionMatrix();}).observe(container);
  let down=null;
  renderer.domElement.addEventListener('pointerdown',e=>{
    down=e.isPrimary&&e.button===0?{id:e.pointerId,x:e.clientX,y:e.clientY}:null;

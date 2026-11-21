@@ -82,6 +82,8 @@ export function identifyPart(name,box){
 export class PartsInspector{
  constructor(meshes,originals,camera,controls,details,bonnet,onInterior=()=>{}){
   this.onInterior=onInterior;
+  this.baseFov=camera.fov;
+  this.baseFilmOffset=camera.filmOffset;
   this.meshes=meshes;this.originals=originals;this.camera=camera;this.controls=controls;this.details=details;this.bonnet=bonnet;this.view='exterior';this.active=false;this.selected=null;this.isolated=false;this.highlights=[];
   this.behindBody=[];
   this.visualRevision=0;
@@ -99,7 +101,7 @@ export class PartsInspector{
   this.$('partSearch').oninput=()=>this.renderList();
   document.querySelectorAll('[data-vehicle]').forEach(b=>b.onclick=()=>this.setView(b.dataset.vehicle));
   this.$('openBonnet').onchange=e=>{this.bonnet.setOpen(e.target.checked);if(!e.target.checked&&this.selected?.zone==='engine')this.clear();this.visibility();};
-  this.$('cockpitView').onclick=()=>{this.clear();this.dashboard=true;this.visibility();this.camera.position.set(.745,1.242,.297);this.controls.target.set(-.475,.865,.132);this.controls.update();};
+  this.$('cockpitView').onclick=()=>{this.clear();this.dashboard=true;this.camera.position.set(.745,1.242,.297);this.controls.target.set(-.475,.865,.132);this.controls.update();this.visibility();};
   this.$('switchDisplay').onclick=()=>{
     this.vehicleScreen=!this.vehicleScreen;
     this.details.changeScreen(this.vehicleScreen);
@@ -114,6 +116,21 @@ export class PartsInspector{
  activate(value){this.clear();this.active=value;this.details.root.visible=value;if(!value)this.bonnet.setOpen(false,true);else{this.bonnet.setOpen(this.view==='engine');this.home();}this.visibility();}
  setView(view){this.view=view;this.$('partSearch').value='';this.clear();this.bonnet.setOpen(view==='engine');this.visibility();this.renderList();this.home();}
  leaveDriverSeat(){if(this.dashboard){this.dashboard=false;this.visibility();}}
+ frameViewport(){
+  const camera=this.camera,aspect=camera.aspect;
+  camera.fov=this.baseFov;
+  camera.filmOffset=this.baseFilmOffset;
+  if(this.insideBody&&aspect<1.3){
+    // Hold enough horizontal room for the wheel and aim the lens slightly
+    // toward the driver. Lens shift leaves the orbit position and target intact.
+    const halfFov=Math.tan(THREE.MathUtils.degToRad(this.baseFov)/2)*Math.max(1,1.10/aspect);
+    const shift=.43*(1-THREE.MathUtils.smoothstep(aspect,.70,1.30));
+    camera.fov=THREE.MathUtils.radToDeg(2*Math.atan(halfFov));
+    camera.filmOffset-=shift*camera.getFilmWidth()*aspect*halfFov;
+  }
+  camera.updateProjectionMatrix();
+  this.visualRevision++;
+ }
  updateDriverGeometry(){
   // Wheels, brakes, and the lower bumpers are hidden by the body when viewed
   // from the front seat. Restore them immediately if the camera orbits out.
@@ -121,6 +138,7 @@ export class PartsInspector{
   const inside=Boolean(this.dashboard&&this.active&&!this.isolated&&this.view==='cabin'&&p.x>.12&&p.x<1&&p.y>1.02&&p.y<1.34&&p.z>.03&&p.z<.57);
   if(this.insideBody===inside)return;
   this.insideBody=inside;
+  this.frameViewport();
   for(const mesh of this.behindBody){if(inside)mesh.layers.disable(0);else mesh.layers.enable(0);}
  }
  home(){
