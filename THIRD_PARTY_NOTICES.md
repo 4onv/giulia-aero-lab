@@ -8,6 +8,8 @@ Alfa Romeo Giulia artist asset from [CadNav model 51001](https://www.cadnav.com/
 
 The inspection bay uses Sergej Majboroda’s **Empty Workshop**. A local 4K derivative of the panorama supplies the projected room and floor, and the matching 1K HDR supplies reflections and lighting. [Original photography](https://polyhaven.com/a/empty_workshop) · [CC0 license](https://polyhaven.com/license)
 
+The charcoal cabin leather uses the grain, surface normals and roughness from Rob Tuytel’s **Leather Red 02**. The local maps are recolored for the car interior. Perforations and the carbon-fiber twill are original to the model. [Original material](https://polyhaven.com/a/leather_red_02) · [CC0 license](https://polyhaven.com/license)
+
 **Studio Small 09**, Poly Haven: https://polyhaven.com/a/studio_small_09 . CC0. Used as local environment lighting in `dist/assets/studio.hdr`.
 
 ## Three.js

@@ -91,6 +91,14 @@ export function setupStudio(THREE, scene, renderer) {
   const tunnelFog = scene.fog;
   const rig = scene.children.filter(obj => obj.isGridHelper || obj.isLine || obj.geometry?.type === 'PlaneGeometry');
   const lights = scene.children.filter(obj => obj.isLight).map(light => ({ light, intensity: light.intensity }));
+  // Broad daylight from the left window and windscreen exposes the dark
+  // materials inside the car; the exterior keeps the photographed workshop rig.
+  const cabinFill = new THREE.HemisphereLight(0xf5eada, 0x7f90a0, .93);
+  const windowLight = new THREE.DirectionalLight(0xf8ece0, 1.65);
+  windowLight.position.set(.32,1.7,1.1);
+  windowLight.target.position.set(-.47,.78,.03);
+  cabinFill.visible = windowLight.visible = false;
+  scene.add(cabinFill, windowLight, windowLight.target);
   const room = new THREE.Group();
   room.visible = false;
   const bayHeading = 115 * Math.PI / 180;
@@ -104,6 +112,7 @@ export function setupStudio(THREE, scene, renderer) {
   let inspecting = false, interior = false, loading = false, dome, workshopLight, tunnelLight = scene.environment;
 
   function update() {
+    cabinFill.visible = windowLight.visible = inspecting && interior;
     const photographic = Boolean(inspecting && dome);
     room.visible = photographic;
     rig.forEach(item => { item.visible = !photographic; });
@@ -111,7 +120,7 @@ export function setupStudio(THREE, scene, renderer) {
     scene.fog = photographic ? null : tunnelFog;
     scene.environment = inspecting && workshopLight ? workshopLight : tunnelLight;
     scene.environmentRotation.y = inspecting && workshopLight ? bayHeading : tunnelHeading;
-    scene.environmentIntensity = inspecting && workshopLight ? (interior ? .25 : .86) : .98;
+    scene.environmentIntensity = inspecting && workshopLight ? (interior ? .54 : .86) : .98;
     for (const { light, intensity } of lights) {
       const weight = interior ? (light.isHemisphereLight ? .25 : .48) : (light.isHemisphereLight ? .53 : .68);
       light.intensity = photographic ? intensity * weight : intensity;

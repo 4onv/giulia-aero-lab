@@ -1,4 +1,6 @@
-import { instrumentDial, clusterDisplay, navigationScreen, steeringBadge, vehicleScreen } from './cockpit-art.js';
+import { instrumentDial, clusterDisplay, navigationScreen, steeringBadge, vehicleScreen, wheelSwitches } from './cockpit-art.js';
+import { bayLips, hoodInsulation, innerWing, paddedFace, rimPoint, steeringGrip } from './body-reconstruction.js';
+import { cabinMaterial } from './cabin-finishes.js';
 import * as THREE from './vendor/three.module.js';
 
 // Authored visual reconstruction, not measured CAD. Front = -X, vehicle left = +Z.
@@ -56,8 +58,35 @@ export function createVehicleDetails(sourceMeshes=[]){
   if(mark)label(g,[pos[0],pos[1]+.010,pos[2]],r*1.6,r*.7,mark,{color:mat===m.blue?'#101a22':'#e9bf45',size:52});
  }
  const liner=part('bay-structure','Engine-compartment liners','Inner panels and cowl trim enclose the engine bay. Their surfaces are reconstructed from photographs; underlying body structure is not modeled.');
- box(liner,[1.18,.05,1.3],[-1.4,.39,0],m.black);
- for(const side of [-1,1]){box(liner,[1.2,.21,.09],[-1.4,.56,side*.64],m.red);box(liner,[.54,.045,.19],[-1.25,.76,side*.60]);box(liner,[.36,.045,.25],[-1.81,.65,side*.57]);for(const x of [-1.93,-1.73,-1.02])bolt(liner,[x,.79,side*.63]);}
+ const hood=sourceMeshes.find(o=>o.name==='010-0-10~01');
+ if(hood){
+   const pad=part('bonnet-insulation','Bonnet insulation pad','Fitted acoustic insulation follows the underside of the bonnet and leaves both extraction vents open.');
+   const felt=cabinMaterial('fascia').clone();felt.color.set('#313336');felt.roughness=.97;felt.side=THREE.DoubleSide;
+   const {geometry,clips}=hoodInsulation(hood);
+   mesh(pad,geometry,felt);
+   for(const [x,y,z] of clips)cylinder(pad,.011,.003,[x,y-.002,z],m.plastic);
+ }
+ const lip=bayLips(hood);
+ const stamped=new THREE.MeshPhysicalMaterial({color:'#66262c',metalness:.38,roughness:.47,clearcoat:.32,side:THREE.DoubleSide});
+ const shield=m.cover.clone();shield.side=THREE.DoubleSide;shield.color.set('#303333');shield.roughness=.76;
+ plate(liner,[[-2.085,-.43],[-2.0,-.68],[-1.62,-.71],[-.76,-.70],[-.76,.70],[-1.62,.71],[-2.0,.68],[-2.085,.43]],.463,.034,m.black);
+ for(const side of [-1,1]){
+   mesh(liner,innerWing(lip,side),stamped);
+   const inset=lip.filter(s=>s.x> -1.91&&s.x<-.92);
+   // Rubber edge seal and shallow stamped ribs follow the taper of the bonnet.
+   pipe(liner,lip.map(s=>[s.x,s.y-.024,side*(s.width-.001)]),.007,m.rubber);
+   pipe(liner,inset.map(s=>[s.x,s.y-.047,side*(s.width-.056)]),.0045,m.red);
+   for(const row of inset.filter((_,i)=>i%10===3)){
+     bolt(liner,[row.x,row.y-.033,side*(row.width-.024)],.008);
+   }
+   mesh(liner,innerWing(lip,side,true),shield);
+   const coverPoints=[[-1.57,side*.562],[-1.46,side*.638],[-1.13,side*.636],[-1.04,side*.598],[-1.10,side*.49],[-1.28,side*.467],[-1.48,side*.514]];
+   plate(liner,coverPoints,.751,.026,m.cover);
+   for(const x of [-1.40,-1.365,-1.33]) pipe(liner,[[x,.757,side*.524],[x+.015,.762,side*.568],[x+.04,.757,side*.609]],.0035,m.plastic);
+   plate(liner,[[-1.96,side*.412],[-1.90,side*.601],[-1.65,side*.626],[-1.60,side*.547],[-1.73,side*.431]],.647,.035,m.cover);
+   for(const x of [-1.91,-1.82])bolt(liner,[x,.655,side*.548]);
+ }
+ plate(liner,[[-.97,-.67],[-.81,-.74],[-.71,-.68],[-.71,.68],[-.81,.74],[-.97,.67]],.882,.15,m.black);
  box(liner,[.17,.15,1.26],[-.82,.84,0]);
  for(let i=0;i<29;i++)box(liner,[.09,.004,.012],[-.82,.919,-.56+i*.04],m.black,.001);
 
@@ -124,7 +153,16 @@ export function createVehicleDetails(sourceMeshes=[]){
  const terminal=part('positive-terminal','Remote positive connection cover','Red protective cover for the positive remote connection in the engine bay. The vehicle battery is located in the luggage compartment.',{reference:BAY_REFERENCE});
  box(terminal,[.065,.045,.06],[-1.69,.59,-.56],m.red);label(terminal,[-1.69,.615,-.56],.04,.04,'+',{color:'#ededed',size:60});
  const front=part('front-carrier','Upper front carrier and latch area','Front support and trim across the radiator area, including a representation of the twin bonnet latch positions. Radiator internals and cooling flow are outside this inspection model.');
- box(front,[.11,.07,1.17],[-1.99,.61,0]);for(const z of [-.43,.43]){box(front,[.055,.025,.07],[-1.98,.66,z],m.steel);bolt(front,[-1.98,.678,z],.009);}
+ plate(front,[[-2.085,-.37],[-2.07,-.54],[-1.92,-.59],[-1.90,-.45],[-2.016,-.34],[-2.025,.34],[-1.90,.45],[-1.92,.59],[-2.07,.54],[-2.085,.37]],.677,.058,m.plastic);
+ box(front,[.11,.07,1.17],[-1.99,.61,0]);
+ for(const z of [-.43,.43]){box(front,[.055,.025,.07],[-1.98,.675,z],m.steel);bolt(front,[-1.98,.693,z],.009);}
+ // The lamp reflector is bright metal when viewed through its exterior lens.
+ // A rear service cover shields its back from the open engine compartment.
+ for(const side of [-1,1]){
+   plate(front,[[-2.006,side*.309],[-1.946,side*.300],[-1.839,side*.415],[-1.851,side*.54],[-1.942,side*.527]],.701,.028,m.cover);
+   for(const x of [-1.949,-1.916])pipe(front,[[x,.708,side*.360],[x+.025,.708,side*.443],[x+.020,.708,side*.49]],.003,m.plastic);
+ }
+ for(let i=0;i<20;i++)box(front,[.020,.12,.006],[-1.977,.563,-.383+i*.04],m.steel,.001);
 
  // Cabin control models are added below the existing artist dashboard surface.
  // They are separate educational assemblies, not a working vehicle interface.
@@ -134,6 +172,13 @@ export function createVehicleDetails(sourceMeshes=[]){
   const housing=cylinder(instruments,.098,.075,[-.52,.96,z],m.black);housing.rotation.z=Math.PI/2;
   const face=cylinder(instruments,.084,.005,[-.479,.96,z],m.black);face.rotation.z=Math.PI/2;
   ring(instruments,[-.474,.96,z],.086,.004,[1,0,0]);
+  // The Giulia's gauges sit inside independent, deep upper cowls. The lower
+  // opening is cut back so that the needles remain readable below the rim.
+  const hood=new THREE.Shape();
+  hood.absarc(0,0,.102,.10,Math.PI-.10,false);
+  hood.absarc(0,0,.093,Math.PI-.10,.10,true);hood.closePath();
+  const shell=mesh(instruments,new THREE.ExtrudeGeometry(hood,{depth:.066,bevelEnabled:true,bevelSegments:3,bevelSize:.002,bevelThickness:.002,curveSegments:40}),cabinMaterial('fascia'),[-.535,.96,z]);
+  shell.rotation.y=Math.PI/2;
   if(typeof document!=='undefined'){
    const dial = mesh(instruments,new THREE.PlaneGeometry(.165,.165),instrumentDial(z>.4),[-.472,.96,z]);
    dial.rotation.y=Math.PI/2;
@@ -145,13 +190,20 @@ export function createVehicleDetails(sourceMeshes=[]){
   trip.rotation.y=Math.PI/2;
  }
  const display=control('connect-display','Connect navigation display','Navigation, media and vehicle settings share an integrated dashboard screen. The cartography shown here is an original illustrative display.');
- box(display,[.024,.103,.328],[-.603,.941,-.016],m.black,.009);
+ const glassSurround=new THREE.MeshPhysicalMaterial({color:'#14191a',roughness:.25,metalness:.22,clearcoat:.78,clearcoatRoughness:.16});
+ const glassOutline=new THREE.Shape();
+ glassOutline.moveTo(-.194,-.035);glassOutline.quadraticCurveTo(-.197,-.052,-.176,-.052);
+ glassOutline.lineTo(.166,-.052);glassOutline.quadraticCurveTo(.177,-.052,.182,-.043);
+ glassOutline.lineTo(.198,.023);glassOutline.quadraticCurveTo(.200,.047,.173,.052);
+ glassOutline.quadraticCurveTo(.035,.062,-.164,.058);glassOutline.quadraticCurveTo(-.197,.056,-.197,.038);glassOutline.closePath();
+ const screenSurround=mesh(display,new THREE.ExtrudeGeometry(glassOutline,{depth:.034,bevelEnabled:true,bevelSize:.002,bevelThickness:.002,bevelSegments:3,curveSegments:18}),glassSurround,[-.614,.941,-.016]);
+ screenSurround.rotation.y=Math.PI/2;
  let changeScreen=()=>{};
  if(typeof document!=='undefined'){
    const screen=navigationScreen();
    const map=screen.map;
    let vehicleMap;
-   const panel=mesh(display,new THREE.PlaneGeometry(.310,.088),screen,[-.582,.941,-.016]);
+   const panel=mesh(display,new THREE.PlaneGeometry(.315,.081),screen,[-.5775,.944,-.016]);
    panel.rotation.y=Math.PI/2;
    changeScreen=vehicle=>{
      if(vehicle&&!vehicleMap)vehicleMap=vehicleScreen().map;
@@ -159,13 +211,56 @@ export function createVehicleDetails(sourceMeshes=[]){
    };
  }
  const vents=control('centre-vents','Centre dashboard air outlets','Two adjustable outlets distribute air from the heating and air-conditioning system into the cabin.');
- for(const z of [-.08,.08]){const o=cylinder(vents,.043,.045,[-.53,.81,z],m.black);o.rotation.z=Math.PI/2;ring(vents,[-.505,.81,z],.043,.0035,[1,0,0]);for(let i=-2;i<=2;i++)box(vents,[.006,.006,.068],[-.501,.81+i*.011,z],m.cover,.001);}
+ function outlet(group,x,y,z,r){
+   const barrel=cylinder(group,r,.039,[x-.019,y,z],m.black);barrel.rotation.z=Math.PI/2;
+   for(const [scale,t,finish,dx] of [[1.05,.0025,m.cover,0],[1,.003,m.metal,.002],[.88,.003,m.plastic,.003]]){
+     ring(group,[x+dx,y,z],r*scale,t,[1,0,0],finish);
+   }
+   for(let i=-3;i<=3;i++){
+     const dy=i*r*.215;
+     const width=2*Math.sqrt((r*.85)**2-dy*dy);
+     const vane=box(group,[.009,.0024,width],[x-.001,y+dy,z],m.cover,.001);
+     vane.rotation.z=-.14;
+   }
+   box(group,[.006,.006,r*.61],[x+.004,y,z],m.metal,.002);
+ }
+ for(const z of [-.065,.065])outlet(vents,-.496,.812,z,.047);
+ outlet(vents,-.46,.867,.582,.047);
+ outlet(vents,-.48,.862,-.626,.048);
+ const door=control('front-door-cards','Front door trim and release','Sculpted door armrests, release handles and trim surrounding the adjacent dashboard air outlets.');
+ for(const side of [-1,1]){
+   const card=[[-.57,.090],[-.52,.126],[-.39,.137],[-.10,.149],[.23,.144],[.50,.126],[.59,.102],[.57,-.14],[.46,-.211],[-.33,-.219],[-.54,-.164]];
+   const doorSkin=mesh(door,paddedFace(card,.028),cabinMaterial('fascia'),[.019,.79,side*.663]);doorSkin.scale.z=-side;
+   const sweep=[[-.54,.066],[-.40,.089],[-.18,.076],[.06,.046],[.36,.052],[.49,.070],[.48,.032],[.17,.011],[-.08,.020],[-.31,.049],[-.49,.043]];
+   const band=mesh(door,paddedFace(sweep,.012),cabinMaterial('carbon'),[.019,.79,side*.633]);band.scale.z=-side;
+   const lip=[[-.50,.841,side*.626],[-.30,.860,side*.622],[-.04,.827,side*.622],[.18,.820,side*.622],[.43,.842,side*.634]];
+   pipe(door,lip,.002,m.metal);
+   const pull=[[-.099,.024],[-.055,.033],[.073,.020],[.093,.006],[.071,-.021],[-.037,-.024],[-.092,-.011]];
+   const inset=mesh(door,paddedFace(pull,.013),m.black,[-.19,.777,side*.631]);inset.scale.z=-side;
+   pipe(door,[[-.257,.781,side*.612],[-.230,.787,side*.605],[-.173,.787,side*.602],[-.136,.778,side*.606]],.005,m.metal);
+ }
  const climate=control('climate-panel','Climate-control panel','Temperature, fan and airflow controls for the automatic climate-control system. Front and rear demisting functions are also operated from this area.');
  box(climate,[.035,.075,.28],[-.47,.70,0],m.plastic,.012);for(const z of [-.10,0,.10]){const knob=cylinder(climate,.024,.022,[-.443,.70,z],m.cover);knob.rotation.z=Math.PI/2;ring(climate,[-.43,.70,z],.023,.002,[1,0,0]);}
  for(const z of [-.10,0,.10])label(climate,[-.428,.70,z],.033,.016,z===0?'OFF':'AUTO',{vertical:true,size:42});
  for(const z of [-.047,.047])for(const y of [.68,.72])box(climate,[.008,.014,.035],[-.44,y,z],m.cover,.002);
+ label(climate,[-.432,.719,-.047],.018,.014,'△',{vertical:true,color:'#d86052',size:58});
+ for(const z of [-.10,0,.10]){
+   for(let i=0;i<34;i++){
+     const a=i*Math.PI/17;
+     const ridge=box(climate,[.010,.0014,.002],[-.440,.70+Math.sin(a)*.024,z+Math.cos(a)*.024],m.steel,.0004);
+     ridge.rotation.x=-a;
+   }
+ }
  const selector=control('gear-selector','Automatic gear selector','Selects transmission positions and manual shifting on an automatic-equipped Giulia. The park button is incorporated in the selector; this is an inspection model and does not operate a transmission.');
- box(selector,[.17,.026,.115],[-.14,.52,0],m.steel,.012);box(selector,[.15,.028,.095],[-.14,.54,0],m.black,.01);pipe(selector,[[-.14,.54,0],[-.16,.64,0],[-.18,.67,0]],.024,m.cover);box(selector,[.08,.04,.055],[-.18,.674,0],m.cover,.012);label(selector,[-.18,.698,0],.026,.026,'P',{size:60});
+ box(selector,[.17,.026,.115],[-.14,.52,0],m.steel,.012);
+ box(selector,[.15,.028,.095],[-.14,.54,0],m.black,.01);
+ const boot=mesh(selector,new THREE.LatheGeometry([[.061,0],[.057,.015],[.043,.028],[.034,.042],[.020,.066],[.015,.076]].map(([r,y])=>new THREE.Vector2(r,y)),48),cabinMaterial('leather'),[-.14,.545,0]);
+ boot.scale.set(1.04,1,.7);
+ const shank=cylinder(selector,.013,.062,[-.149,.636,0],m.steel);shank.rotation.z=.19;
+ const grip=mesh(selector,new THREE.SphereGeometry(1,40,24),cabinMaterial('leather'),[-.157,.666,0]);grip.scale.set(.038,.052,.027);grip.rotation.z=.25;
+ const capFace=mesh(selector,new THREE.SphereGeometry(1,32,16),m.steel,[-.165,.686,-.002]);capFace.scale.set(.036,.029,.025);capFace.rotation.z=.26;
+ const key=mesh(selector,new THREE.SphereGeometry(1,32,16),m.black,[-.159,.702,0]);key.scale.set(.020,.015,.020);
+ label(selector,[-.159,.717,0],.016,.014,'P',{size:55});
  const dna=control('dna-selector','Alfa DNA Pro selector','Selects driving modes. The Quadrifoglio system includes Dynamic, Natural, Advanced Efficiency and Race modes, which alter the vehicle’s control strategies.');
  cylinder(dna,.027,.027,[-.06,.542,.10],m.steel);cylinder(dna,.023,.029,[-.06,.55,.10],m.cover);label(dna,[-.06,.566,.10],.04,.024,'DNA',{size:40});
  const controller=control('connect-controller','Connect rotary controller','Rotary and push control for the infotainment system, located behind the gear selector. Adjacent buttons provide shortcuts to the system menus.');
@@ -175,17 +270,13 @@ export function createVehicleDetails(sourceMeshes=[]){
  const start=control('engine-start','Steering-wheel start button','Engine start/stop button positioned on the steering wheel. The red button is a distinctive Quadrifoglio control.');
  // A moulded lower spoke carries the start button. Its rounded pad shares
  // the rear surface of the horn at one end and the rim at the other.
- const hornOutline=new THREE.Shape();
- hornOutline.moveTo(-.057,.050);
- hornOutline.quadraticCurveTo(0,.075,.057,.050);
- hornOutline.quadraticCurveTo(.077,.042,.074,.014);
- hornOutline.quadraticCurveTo(.068,-.034,.027,-.066);
- hornOutline.quadraticCurveTo(0,-.080,-.027,-.066);
- hornOutline.quadraticCurveTo(-.069,-.034,-.074,.014);
- hornOutline.quadraticCurveTo(-.077,.042,-.057,.050);
- const hornSkin=new THREE.ExtrudeGeometry(hornOutline,{depth:.012,bevelEnabled:true,bevelSize:.009,bevelThickness:.009,bevelSegments:5,curveSegments:12});
- const hornCentre=mesh(start,hornSkin,material('#29282a',.72),[-.222,.902,.377]);
- hornCentre.rotation.y=Math.PI/2;
+ const wheelCenter=[-.242,.906,.377], tilt=.307;
+ function wheelPiece(geometry,finish,x=0,y=0,z=0){
+   const p=mesh(start,geometry,finish,[wheelCenter[0]+x,wheelCenter[1]+y,wheelCenter[2]+z]);
+   p.rotation.order='ZXY';p.rotation.z=tilt;p.rotation.y=Math.PI/2;return p;
+ }
+ const cushion=[[-.062,.048],[-.030,.059],[.030,.059],[.062,.048],[.076,.033],[.075,.009],[.060,-.020],[.034,-.056],[0,-.067],[-.034,-.056],[-.060,-.020],[-.075,.009],[-.076,.033]];
+ wheelPiece(paddedFace(cushion,.043),cabinMaterial('leather'));
  function facedShape(group,points,position,depth,finish,bevel=.003){
    const outline=new THREE.Shape(); outline.moveTo(points[0][0],points[0][1]);
    for(const [x,y] of points.slice(1))outline.lineTo(x,y);
@@ -193,11 +284,38 @@ export function createVehicleDetails(sourceMeshes=[]){
    const geo=new THREE.ExtrudeGeometry(outline,{depth,bevelEnabled:true,bevelSize:bevel,bevelThickness:bevel,bevelSegments:3,steps:1});
    const item=mesh(group,geo,finish,position);item.rotation.y=Math.PI/2;return item;
  }
- const pod=material('#292b2e',.51,.12);
- facedShape(start,[[-.07,.014],[-.044,.024],[.017,.032],[.057,.024],[.050,-.002],[.002,-.018],[-.028,-.052],[-.063,-.040]],
-   [-.245,.874,.425],.031,pod,.004);
- const startBezel=cylinder(start,.020,.009,[-.211,.849,.470],m.steel);startBezel.rotation.z=Math.PI/2;
- const startCap=cylinder(start,.0165,.009,[-.204,.849,.470],m.red);startCap.rotation.z=Math.PI/2;
+ const pod=material('#32373a',.42,.19);
+ const metalSpoke=new THREE.MeshPhysicalMaterial({color:'#aeb2b3',roughness:.30,metalness:.78,clearcoat:.22});
+ const lowerFork=wheelPiece(paddedFace([[-.060,-.026],[-.032,-.038],[0,-.071],[.032,-.038],[.060,-.026],[.053,-.058],[.027,-.132],[.019,-.154],[-.019,-.154],[-.027,-.132],[-.053,-.058]],.011),metalSpoke,-.010);
+ lowerFork.material.side=THREE.DoubleSide;
+ wheelPiece(paddedFace([[-.029,-.064],[0,-.080],[.029,-.064],[.016,-.130],[0,-.145],[-.016,-.130]],.012),cabinMaterial('carbon'),.000);
+ for(const side of [-1,1]){
+   const profile=[[.046,.036],[.096,.036],[.153,.043],[.17,.034],[.163,.012],[.112,-.017],[.075,-.029],[.050,-.018]];
+   const outline=profile.map(([u,y])=>[side*u,y]);
+   if(side<0)outline.reverse();
+   wheelPiece(paddedFace(outline,.014),metalSpoke,-.003);
+   const inset=outline.map(([u,y])=>[u*.970, y*.81+.003]);
+   wheelPiece(paddedFace(inset,.012),pod,.008);
+   const base=[-.219,.913,.377+side*.113];
+   if(typeof document!=='undefined'){
+     const switches=mesh(start,new THREE.PlaneGeometry(.062,.029),wheelSwitches(side>0),base);
+     switches.rotation.order='ZXY';switches.rotation.z=tilt;switches.rotation.y=Math.PI/2;
+   }
+ }
+ // Perforated side grips, carbon base and their leather-to-inlay joins.
+ const deg=n=>n*Math.PI/180;
+ for(const [from,to,type] of [[-39,40,'perforated'],[140,219,'perforated'],[237,303,'carbon']]){
+   mesh(start,steeringGrip(deg(from),deg(to),.00065),cabinMaterial(type));
+   for(const angle of [from,to]){
+     const points=Array.from({length:33},(_,i)=>rimPoint(deg(angle),i*Math.PI/16,.00090));
+     pipe(start,points,.0010,m.rubber);
+   }
+ }
+ // A separate moulded lobe carries the Quadrifoglio ignition switch.
+ const podOutline=[[-.034,.031],[.011,.025],[.035,.008],[.034,-.021],[.017,-.035],[-.006,-.033],[-.025,-.009]];
+ wheelPiece(paddedFace(podOutline,.022),pod,.007,-.033,.081);
+ const startBezel=cylinder(start,.0185,.009,[-.211,.849,.470],metalSpoke);startBezel.rotation.z=Math.PI/2;
+ const startCap=cylinder(start,.016,.009,[-.204,.849,.470],material('#a91b27',.32,.26));startCap.rotation.z=Math.PI/2;
  label(start,[-.198,.852,.470],.021,.007,'START',{vertical:true,size:45});
  label(start,[-.198,.844,.470],.021,.006,'STOP',{vertical:true,size:43});
  const paddles=control('shift-paddles','Steering-column shift paddles','Column-mounted aluminium paddles command manual gear changes on the automatic transmission. Left requests a downshift; right requests an upshift.');
@@ -220,28 +338,21 @@ export function createVehicleDetails(sourceMeshes=[]){
      const hit=ray.intersectObject(object,false)[0];
      return hit ? [hit.point.x+offset,y,z] : null;
    }
-   const badgePos=[-.198,.902,.377];
+   const badgePos=[-.193,.917,.377];
    if(badgePos){
-     const bezel=cylinder(start,.032,.005,badgePos,m.steel);
-     bezel.rotation.z=Math.PI/2;
-     const crest=mesh(start,new THREE.PlaneGeometry(.061,.061),steeringBadge(),[badgePos[0]+.0035,badgePos[1],badgePos[2]]);
-     crest.rotation.y=Math.PI/2;
+     const bezel=cylinder(start,.0285,.005,badgePos,m.steel);
+     bezel.rotation.z=Math.PI/2+tilt;
+     const crest=mesh(start,new THREE.PlaneGeometry(.055,.055),steeringBadge(),[badgePos[0]+.0035,badgePos[1]+.001,badgePos[2]]);
+     crest.rotation.order='ZXY';crest.rotation.z=tilt;crest.rotation.y=Math.PI/2;
    }
-   for(const [z,caption] of [[.283,'+'],[.312,'−'],[.449,'SET'],[.479,'RES']]){
-     const loc=skin(wheelHub,.922,z,.003);
-     if(!loc)continue;
-     box(start,[.006,.017,.022],loc,m.black,.002);
-     label(start,[loc[0]+.005,loc[1],loc[2]],.016,.009,caption,{vertical:true,size:54});
-   }
-   const stitch=material('#605754',.85);
+   const stitch=material('#7c625c',.83);
    const rim=sourceMeshes.find(o=>o.name==='051-0-51~00');
    if(rim){
      // Follow the actual leather rim. Stitch pairs cross its inner seam.
-     for(let i=0;i<128;i++){
-       const a=i*2*Math.PI/128;
-       const points=[[-.012,.170],[.010,.176]];
-       const anchors=points.map(([offset,r])=>skin(rim,.909+Math.sin(a+offset)*r*.96,.377+Math.cos(a+offset)*r,.0008));
-       if(anchors.every(Boolean))pipe(start,anchors,.00057,stitch);
+     for(let i=0;i<148;i++){
+       const a=i*2*Math.PI/148;
+       if(a>4.12&&a<5.30)continue;
+       pipe(start,[rimPoint(a-.012,2.24,.00125),rimPoint(a,2.44,.00125),rimPoint(a+.012,2.25,.00125)],.00059,stitch);
      }
    }
    // The upper dash uses two parallel rows of satin thread. The lower line is a metal reveal.
@@ -270,8 +381,8 @@ export function createVehicleDetails(sourceMeshes=[]){
      const trim=new THREE.BufferGeometry();
      trim.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
      trim.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));trim.setIndex(indices);trim.computeVertexNormals();
-     const consoleSkin=sourceMeshes.find(o=>o.name==='051-0-51~15')?.material.clone()||m.black.clone();
-     consoleSkin.side=THREE.DoubleSide;consoleSkin.color.set('#36383a');
+   const consoleSkin=cabinMaterial('carbon').clone();
+     consoleSkin.side=THREE.DoubleSide;
      mesh(vents,trim,consoleSkin);
    }
  }

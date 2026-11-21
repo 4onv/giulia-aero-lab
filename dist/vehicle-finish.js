@@ -1,4 +1,6 @@
 import * as THREE from './vendor/three.module.js';
+import { steeringGrip } from './body-reconstruction.js';
+import { cabinMaterial } from './cabin-finishes.js';
 
 // These maps are generated locally. The source body has positions and normals
 // but no texture coordinates, so each finish supplies its own projection.
@@ -60,37 +62,6 @@ function sidewall() {
       ctx.rotate(Math.PI / 60); ctx.strokeStyle = '#898989';
       ctx.beginPath(); ctx.moveTo(-1, -r * .95); ctx.lineTo(4, -r); ctx.stroke();
     }
-  });
-}
-
-function wheelHide(mesh) {
-  const geometry=mesh.geometry, pos=geometry.attributes.position;
-  const uv=new Float32Array(pos.count*2);
-  for(let i=0;i<pos.count;i++){
-    const y=pos.getY(i)-.909, z=pos.getZ(i)-.377;
-    const angle=Math.atan2(y,z), radius=Math.hypot(y,z);
-    const tilt=pos.getX(i)+.253+.323*y;
-    uv[i*2]=.5+angle/(Math.PI*2);
-    uv[i*2+1]=.5+Math.atan2(tilt,radius-.180)/(Math.PI*2);
-  }
-  geometry.setAttribute('uv',new THREE.BufferAttribute(uv,2));
-  return texture('wheel grip',1024,(c,n)=>{
-    const pixels=c.createImageData(n,n);
-    let random=4557;
-    for(let y=0;y<n;y++)for(let x=0;x<n;x++){
-      random=(random*1664525+1013904223)>>>0;
-      const side=Math.abs(Math.cos((x/n-.5)*Math.PI*2))>.64;
-      const row=Math.floor(y/45);
-      // About 3 mm across on the unwrapped rim, cut into the side grips only.
-      const px=((x+(row%2)*3.5+7)%7-3.5)/1.25, py=(y%45-23)/10;
-      const radius=Math.hypot(px,py);
-      const pore=side&&radius<1.45? Math.max(0,1-radius/1.45):0;
-      const shade=147+(random/4294967296)*39-99*pore;
-      const j=(y*n+x)*4;
-      pixels.data[j]=pixels.data[j+1]=pixels.data[j+2]=shade;
-      pixels.data[j+3]=255;
-    }
-    c.putImageData(pixels,0,0);
   });
 }
 
@@ -174,18 +145,22 @@ export function vehicleFinish(mesh) {
   const id = Number(mesh.name.slice(0, 3));
   if (id === 51) {
     if(mesh.name.endsWith('~00')){
-      const hide=wheelHide(mesh);
-      return finish('steering leather',{color:'#303031',map:hide,bumpMap:hide,bumpScale:.0018,
-        roughness:.67,clearcoat:.10,clearcoatRoughness:.45,sheen:.09,sheenColor:'#706b67'});
+      mesh.geometry.dispose();
+      mesh.geometry=steeringGrip();
+      return cabinMaterial('leather');
+    }
+    if(mesh.name.endsWith('~04')){
+      // Keep the telescoping column behind the new contoured horn pad and spokes.
+      const g=mesh.geometry, p=g.attributes.position, index=g.index.array, retained=[];
+      for(let i=0;i<index.length;i+=3){
+        const triangle=[index[i],index[i+1],index[i+2]];
+        if(triangle.some(k=>p.getX(k)+.323*(p.getY(k)-.909)<-.312))retained.push(...triangle);
+      }
+      g.setIndex(retained);
     }
     project(mesh);
     const trim = mesh.name.endsWith('~15');
-    return finish(trim ? 'console' : 'upholstery', {
-      color: trim ? '#5a5c5e' : '#474849', roughness: trim ? .43 : .76, metalness: trim ? .21 : 0,
-      map: grain(trim), bumpMap: grain(trim), bumpScale: trim ? .0005 : .0014,
-      sheen: trim ? 0 : .34, sheenRoughness: .74, sheenColor: '#787678',
-      clearcoat: trim ? .42 : .075, clearcoatRoughness: .29,
-    });
+    return cabinMaterial(trim?'carbon':mesh.name.endsWith('~01')?'leather':'fascia');
   }
   if ([33, 34, 38, 40].includes(id)) {
     project(mesh, true);

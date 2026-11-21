@@ -115,6 +115,21 @@ export function steeringBadge() {
   });
 }
 
+export function wheelSwitches(left) {
+  return artwork(384,162,(c,w,h)=>{
+    const base=c.createLinearGradient(0,0,0,h);
+    base.addColorStop(0,'#414448');base.addColorStop(.38,'#292c2e');base.addColorStop(1,'#17191c');
+    c.fillStyle=base;c.fillRect(0,0,w,h);
+    c.lineWidth=3;c.strokeStyle='#111416';
+    for(const x of [109,247]){c.beginPath();c.moveTo(x+7,9);c.lineTo(x-7,152);c.stroke();}
+    c.strokeStyle='#101315';c.beginPath();c.moveTo(8,84);c.lineTo(376,79);c.stroke();
+    const rows=left?[['↶','RES','+'],['○','SET','−']]:[['◀','♫','▶'],['☎','VOL','▾']];
+    for(let row=0;row<2;row++)for(let i=0;i<3;i++){
+      text(c,rows[row][i],[54,179,318][i],row?119:44,'500 30px Arial','#dde0dc');
+    }
+  });
+}
+
 export function vehicleScreen() {
   return artwork(1000,350,(c,w,h)=>{
     c.fillStyle='#182025';c.fillRect(0,0,w,h);

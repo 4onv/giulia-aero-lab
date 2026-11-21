@@ -85,13 +85,15 @@ export class PartsInspector{
   this.meshes=meshes;this.originals=originals;this.camera=camera;this.controls=controls;this.details=details;this.bonnet=bonnet;this.view='exterior';this.active=false;this.selected=null;this.isolated=false;this.highlights=[];
   this.entries=meshes.map(mesh=>{const box=new THREE.Box3().setFromObject(mesh);const info=identifyPart(mesh.name,box);return {mesh,...info,zone:info.category==='Cabin'?'cabin':'exterior'};});
   this.entries.push(...details.parts.map(mesh=>({mesh,...mesh.userData.part})));
+  const pad=details.parts.find(mesh=>mesh.name==='bonnet-insulation');
+  if(pad)bonnet.pivot.attach(pad);
   this.entries.sort((a,b)=>Number(b.mapped)-Number(a.mapped)||a.name.localeCompare(b.name));
   this.lookup=new Map();for(const entry of this.entries)entry.mesh.traverse(m=>{if(m.isMesh)this.lookup.set(m,entry);});
   this.$=id=>document.getElementById(id);
   this.$('partSearch').oninput=()=>this.renderList();
   document.querySelectorAll('[data-vehicle]').forEach(b=>b.onclick=()=>this.setView(b.dataset.vehicle));
   this.$('openBonnet').onchange=e=>{this.bonnet.setOpen(e.target.checked);if(!e.target.checked&&this.selected?.zone==='engine')this.clear();this.visibility();};
-  this.$('cockpitView').onclick=()=>{this.clear();this.dashboard=true;this.visibility();this.camera.position.set(.69,1.255,.266);this.controls.target.set(-.475,.884,.148);this.controls.update();};
+  this.$('cockpitView').onclick=()=>{this.clear();this.dashboard=true;this.visibility();this.camera.position.set(.745,1.242,.297);this.controls.target.set(-.475,.865,.132);this.controls.update();};
   this.$('switchDisplay').onclick=()=>{
     this.vehicleScreen=!this.vehicleScreen;
     this.details.changeScreen(this.vehicleScreen);
