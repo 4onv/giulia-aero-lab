@@ -68,6 +68,7 @@ const basic={
  22:['Rear badge','Exterior','Emblem on the rear luggage-compartment panel.']
 };
 export function identifyPart(name,box){
+ if(name==='lamp-covers')return {name:'Headlamp outer lenses',category:'Lighting',description:'Clear outer covers reveal the chrome optical elements and the lamp housings behind them.',mapped:true};
  if(name==='bonnet-vent-surrounds')return {name:'Bonnet vent surrounds',category:'Exterior',description:'Trim surrounding the bonnet ventilation openings. It moves with the bonnet during inspection.',mapped:true};
  if(named.has(name))return {...named.get(name),mapped:true};
  const id=Number(name.slice(0,3)),side=box.min.z+box.max.z>0?'Left':'Right',end=box.min.x+box.max.x<0?'front':'rear';
@@ -79,7 +80,8 @@ export function identifyPart(name,box){
 }
 
 export class PartsInspector{
- constructor(meshes,originals,camera,controls,details,bonnet){
+ constructor(meshes,originals,camera,controls,details,bonnet,onInterior=()=>{}){
+  this.onInterior=onInterior;
   this.meshes=meshes;this.originals=originals;this.camera=camera;this.controls=controls;this.details=details;this.bonnet=bonnet;this.view='exterior';this.active=false;this.selected=null;this.isolated=false;this.highlights=[];
   this.entries=meshes.map(mesh=>{const box=new THREE.Box3().setFromObject(mesh);const info=identifyPart(mesh.name,box);return {mesh,...info,zone:info.category==='Cabin'?'cabin':'exterior'};});
   this.entries.push(...details.parts.map(mesh=>({mesh,...mesh.userData.part})));
@@ -89,7 +91,12 @@ export class PartsInspector{
   this.$('partSearch').oninput=()=>this.renderList();
   document.querySelectorAll('[data-vehicle]').forEach(b=>b.onclick=()=>this.setView(b.dataset.vehicle));
   this.$('openBonnet').onchange=e=>{this.bonnet.setOpen(e.target.checked);if(!e.target.checked&&this.selected?.zone==='engine')this.clear();this.visibility();};
-  this.$('cockpitView').onclick=()=>{this.clear();this.dashboard=true;this.visibility();this.camera.position.set(.68,1.42,.12);this.controls.target.set(-.44,.82,.12);this.controls.update();};
+  this.$('cockpitView').onclick=()=>{this.clear();this.dashboard=true;this.visibility();this.camera.position.set(.69,1.255,.266);this.controls.target.set(-.475,.884,.148);this.controls.update();};
+  this.$('switchDisplay').onclick=()=>{
+    this.vehicleScreen=!this.vehicleScreen;
+    this.details.changeScreen(this.vehicleScreen);
+    this.$('switchDisplay').textContent=this.vehicleScreen?'Show navigation map':'Show vehicle information';
+  };
   this.$('closePart').onclick=()=>this.clear();
   this.$('focusPart').onclick=()=>this.focus();
   this.$('isolatePart').onclick=()=>{this.isolated=!this.isolated;this.visibility();};
@@ -105,12 +112,19 @@ export class PartsInspector{
   document.querySelectorAll('[data-camera]').forEach(b=>b.classList.remove('active'));
  }
  visibility(){
+  this.onInterior(Boolean(this.active && this.view==='cabin' && this.dashboard));
   for(const entry of this.entries){
    if(!this.active){entry.mesh.visible=!entry.inspectionOnly;continue;}
    entry.mesh.visible=this.isolated?entry===this.selected:entry.zone==='engine'?this.view!=='cabin'&&this.bonnet.open:this.view==='cabin'?entry.zone==='cabin':true;
-   if(!this.isolated&&this.view==='cabin'&&this.dashboard&&/^051-0-51~(07|08|09|10)$/.test(entry.mesh.name))entry.mesh.visible=false;
+   if(!this.isolated&&this.view==='cabin'&&this.dashboard){
+    // Looking through a real windscreen gives the driver a bonnet and A-pillars
+    // in the foreground. Keep the separate whole-cabin inspection cutaway.
+    if(entry.zone==='exterior')entry.mesh.visible=true;
+    if(/^051-0-51~(07|08|09|10)$/.test(entry.mesh.name))entry.mesh.visible=false;
+   }
   }
   this.$('bonnetControl').hidden=this.view==='cabin';this.$('cockpitView').hidden=this.view!=='cabin';this.$('openBonnet').checked=this.bonnet.open;
+  this.$('switchDisplay').hidden=this.view!=='cabin'||!this.dashboard;
   this.$('isolatePart').setAttribute('aria-pressed',String(this.isolated));
   document.querySelectorAll('[data-vehicle]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.vehicle===this.view)));
  }

@@ -8,15 +8,15 @@ A compact desktop workspace for airflow studies and vehicle inspection. All requ
 
 ## Features
 
-- Approximately **1.16 million triangles**, organized into **133 selectable surfaces** after separating the bonnet vent trim.
-- Orbit, zoom, camera presets, studio lighting, and revised paint/glass/trim materials.
+- Approximately **1.16 million triangles**, with independent headlamp covers and opening bonnet trim.
+- Orbit and inspect the Rosso clearcoat, machined wheels, moulded tyre lettering and separate optical lenses in a daylit workshop. The wind tunnel has its own lighting.
 - Adjustable air speed and wind angle.
 - Streamlines, surface-pressure coloring, velocity slices, and near-surface probes.
 - Vehicle-only workspace with no airflow overlays.
 - Searchable exterior, cabin and engine-bay catalogue, click selection, highlighting, focus and isolation.
 - Cabin cutaway using the artist’s seats, headrests, steering-wheel rim and trim geometry.
 - Animated bonnet, **21 reconstructed engine-bay assemblies**, and six individually selectable service points.
-- **10 reconstructed cabin control assemblies**, including instruments, infotainment, climate controls, selector and paddles; close dashboard camera.
+- **10 reconstructed cabin control assemblies**, including instruments, infotainment, climate controls, selector and paddles; a driver’s-seat camera, perforated leather, stitched dash and switchable navigation and vehicle displays.
 - Reference links and explicit provenance for the added assemblies.
 - Reduced-Re viscous experiment with progress, pause/resume, restart and a bounded run.
 - CSV section export and PNG scene capture.
@@ -39,6 +39,8 @@ node tools/serve.mjs
 ```
 
 Open **http://127.0.0.1:8766**. This serves the bundled app only on your computer.
+
+The lab can open straight to a view using the URL query `?view=cockpit`, `?view=exterior`, `?view=engine`, `?view=pressure` or `?view=flow`. In the driver’s seat, choose **Show vehicle information** to change the Connect screen and **Show navigation map** to return.
 
 ### Desktop app
 
@@ -111,7 +113,7 @@ The long viscous test is intentionally separate from the quick test suite. It wr
 - **Exhibit:** press H or choose Exhibit to fill the window with the current study. Turntable slowly rotates the view. Drag to take the camera back, then use Show controls or Escape to return.
 - **Run comparison:** under Wind tunnel, pin a potential-flow run and change speed or yaw. The sheet keeps reference, live and difference readings for inlet speed, yaw, dynamic pressure and two fixed virtual anemometers. The reference lasts for the session, including visits to the viscous study.
 - **Wind tunnel:** choose streamlines, pressure or a velocity section; click the car for a near-surface sample.
-- **Vehicle:** search or click a surface; use Focus, Isolate or Show all. Cabin hides the exterior shell; Dashboard cutaway removes the front seat backs and moves inside. Engine opens the bonnet. Search covers all three areas; Reset returns to the current area’s overview.
+- In **Vehicle**, search or click a surface and use Focus, Isolate or Show all. Cabin exposes the seated surfaces. Driver’s seat restores the surrounding body and shows the instruments through the steering wheel. Engine opens the bonnet. Search covers all three areas. Reset returns to the current area’s overview.
 - Drag to orbit, wheel to zoom, right-drag to pan. Camera presets restore an overall view.
 - Space pauses the flow; F focuses a selected component; Escape clears selection.
 - Closing the native window hides it to the tray. The tray menu offers Open, Keep on top and Quit.
